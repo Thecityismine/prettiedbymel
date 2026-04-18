@@ -6,9 +6,9 @@ import { Home, Users, CalendarDays, Sparkles, Bell } from "lucide-react";
 
 const navItems = [
   { href: "/clients", icon: Users, label: "Clients" },
-  { href: "/appointments", icon: CalendarDays, label: "Book" },
-  { href: "/dashboard", icon: Home, label: "Home" },
   { href: "/pricing", icon: Sparkles, label: "Pricing" },
+  { href: "/dashboard", icon: Home, label: "Home" },
+  { href: "/appointments", icon: CalendarDays, label: "Book" },
   { href: "/alerts", icon: Bell, label: "Alerts" },
 ];
 
