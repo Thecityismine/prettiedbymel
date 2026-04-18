@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, authReady } from "./firebase";
+import { db, auth, authReady } from "./firebase";
 
 export interface Availability {
   workDays: number[];   // 0=Sun … 6=Sat
@@ -20,7 +20,7 @@ export const defaultAvailability: Availability = {
 const AVAIL_DOC = doc(db, "settings", "availability");
 
 export async function loadAvailability(): Promise<Availability> {
-  await authReady;
+  if (!auth.currentUser) await authReady;
   const snap = await getDoc(AVAIL_DOC);
   if (snap.exists()) return snap.data() as Availability;
   await setDoc(AVAIL_DOC, defaultAvailability);
@@ -28,8 +28,11 @@ export async function loadAvailability(): Promise<Availability> {
 }
 
 export async function saveAvailability(a: Availability): Promise<void> {
-  await authReady;
-  await setDoc(AVAIL_DOC, a);
+  if (!auth.currentUser) await authReady;
+  const timedOut = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("Save timed out — check your connection.")), 12000)
+  );
+  await Promise.race([setDoc(AVAIL_DOC, a), timedOut]);
 }
 
 // Returns time strings ("10:00", "10:30"…) that are not blocked by existing appointments.

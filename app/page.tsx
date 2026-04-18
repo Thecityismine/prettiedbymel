@@ -309,7 +309,7 @@ function ClientPortal({
         <p className="text-white font-semibold mt-3">Hi, {firstName}! 💅</p>
       </div>
 
-      <div className="flex-1 px-5 py-5 space-y-5 overflow-y-auto pb-10">
+      <div className="flex-1 px-5 py-5 space-y-5 overflow-y-auto pb-24">
         <button
           onClick={onBook}
           className="w-full flex items-center gap-4 bg-gradient-to-r from-[var(--color-pink)]/20 to-transparent border border-[var(--color-pink)]/30 hover:border-[var(--color-pink)] rounded-2xl px-5 py-4 transition-all active:scale-[0.98]"
