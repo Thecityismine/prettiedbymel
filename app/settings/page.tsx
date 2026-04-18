@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [newDayOff, setNewDayOff] = useState("");
 
   useEffect(() => {
@@ -51,10 +52,17 @@ export default function SettingsPage() {
 
   async function handleSave() {
     setSaving(true);
-    await saveAvailability(avail);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaveError("");
+    try {
+      await saveAvailability(avail);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message ?? "Unknown error";
+      setSaveError(msg);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -77,6 +85,12 @@ export default function SettingsPage() {
       />
 
       <div className="px-5 pb-8 space-y-6">
+        {saveError && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+            <p className="text-red-400 text-xs font-semibold">Save failed</p>
+            <p className="text-red-400/70 text-xs mt-0.5">{saveError}</p>
+          </div>
+        )}
 
         {/* Work days */}
         <section>
