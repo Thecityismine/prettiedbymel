@@ -11,15 +11,28 @@ import {
   increment,
 } from "firebase/firestore";
 import { db, auth, authReady } from "./firebase";
+import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 import { updateClient } from "./clientsDb";
 import type { Appointment } from "./types";
 
 const col = collection(db, "appointments");
+const KEY = "appointments";
 
-export async function getAppointments(): Promise<Appointment[]> {
+async function fetchAppointments(): Promise<Appointment[]> {
   if (!auth.currentUser) await authReady;
   const snap = await getDocs(query(col, orderBy("date"), orderBy("time")));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Appointment));
+}
+
+export async function getAppointments(): Promise<Appointment[]> {
+  const hit = cacheGet<Appointment[]>(KEY);
+  if (hit) {
+    if (hit.stale) fetchAppointments().then((d) => cacheSet(KEY, d)).catch(() => {});
+    return hit.data;
+  }
+  const data = await fetchAppointments();
+  cacheSet(KEY, data);
+  return data;
 }
 
 export async function getAppointment(id: string): Promise<Appointment | null> {
@@ -32,17 +45,20 @@ export async function getAppointment(id: string): Promise<Appointment | null> {
 export async function addAppointment(data: Omit<Appointment, "id">): Promise<string> {
   if (!auth.currentUser) await authReady;
   const ref = await addDoc(col, data);
+  cacheInvalidate(KEY);
   return ref.id;
 }
 
 export async function updateAppointment(id: string, data: Partial<Appointment>): Promise<void> {
   if (!auth.currentUser) await authReady;
   await updateDoc(doc(db, "appointments", id), data);
+  cacheInvalidate(KEY);
 }
 
 export async function deleteAppointment(id: string): Promise<void> {
   if (!auth.currentUser) await authReady;
   await deleteDoc(doc(db, "appointments", id));
+  cacheInvalidate(KEY);
 }
 
 export async function markDone(appt: Appointment): Promise<void> {
@@ -50,7 +66,7 @@ export async function markDone(appt: Appointment): Promise<void> {
   await updateClient(appt.clientId, {
     lastVisit: appt.date,
     lastService: appt.serviceName,
-    totalSpent: (appt.price ?? 0), // accumulated by caller if needed
+    totalSpent: (appt.price ?? 0),
   });
 }
 
@@ -60,6 +76,7 @@ export async function markNoShow(appt: Appointment): Promise<void> {
     status: "no-show",
     depositKept: appt.depositPaid,
   });
+  cacheInvalidate(KEY);
   await updateDoc(doc(db, "clients", appt.clientId), {
     noShowCount: increment(1),
   });

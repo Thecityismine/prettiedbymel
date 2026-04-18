@@ -10,14 +10,27 @@ import {
   query,
 } from "firebase/firestore";
 import { db, auth, authReady } from "./firebase";
+import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 import type { Client } from "./types";
 
 const col = collection(db, "clients");
+const KEY = "clients";
 
-export async function getClients(): Promise<Client[]> {
+async function fetchClients(): Promise<Client[]> {
   if (!auth.currentUser) await authReady;
   const snap = await getDocs(query(col, orderBy("name")));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Client));
+}
+
+export async function getClients(): Promise<Client[]> {
+  const hit = cacheGet<Client[]>(KEY);
+  if (hit) {
+    if (hit.stale) fetchClients().then((d) => cacheSet(KEY, d)).catch(() => {});
+    return hit.data;
+  }
+  const data = await fetchClients();
+  cacheSet(KEY, data);
+  return data;
 }
 
 export async function getClient(id: string): Promise<Client | null> {
@@ -30,17 +43,20 @@ export async function getClient(id: string): Promise<Client | null> {
 export async function addClient(data: Omit<Client, "id">): Promise<string> {
   if (!auth.currentUser) await authReady;
   const ref = await addDoc(col, data);
+  cacheInvalidate(KEY);
   return ref.id;
 }
 
 export async function updateClient(id: string, data: Partial<Client>): Promise<void> {
   if (!auth.currentUser) await authReady;
   await updateDoc(doc(db, "clients", id), data);
+  cacheInvalidate(KEY);
 }
 
 export async function deleteClient(id: string): Promise<void> {
   if (!auth.currentUser) await authReady;
   await deleteDoc(doc(db, "clients", id));
+  cacheInvalidate(KEY);
 }
 
 export function weeksAgo(dateStr?: string): number | null {

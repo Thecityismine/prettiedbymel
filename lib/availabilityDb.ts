@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth, authReady } from "./firebase";
 import { restPatch } from "./firestoreRest";
+import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 
 export interface Availability {
   workDays: number[];   // 0=Sun … 6=Sat
@@ -19,17 +20,31 @@ export const defaultAvailability: Availability = {
 };
 
 const AVAIL_DOC = doc(db, "settings", "availability");
+const KEY = "availability";
 
 export async function loadAvailability(): Promise<Availability> {
+  const hit = cacheGet<Availability>(KEY);
+  if (hit) {
+    if (hit.stale) {
+      (async () => {
+        if (!auth.currentUser) await authReady;
+        const snap = await getDoc(AVAIL_DOC);
+        if (snap.exists()) cacheSet(KEY, snap.data() as Availability);
+      })().catch(() => {});
+    }
+    return hit.data;
+  }
   if (!auth.currentUser) await authReady;
   const snap = await getDoc(AVAIL_DOC);
-  if (snap.exists()) return snap.data() as Availability;
-  await setDoc(AVAIL_DOC, defaultAvailability);
-  return defaultAvailability;
+  const data = snap.exists() ? (snap.data() as Availability) : defaultAvailability;
+  if (!snap.exists()) await setDoc(AVAIL_DOC, defaultAvailability);
+  cacheSet(KEY, data);
+  return data;
 }
 
 export async function saveAvailability(a: Availability): Promise<void> {
   await restPatch("settings", "availability", a as unknown as Record<string, unknown>);
+  cacheSet(KEY, a);
 }
 
 // Returns time strings ("10:00", "10:30"…) that are not blocked by existing appointments.
