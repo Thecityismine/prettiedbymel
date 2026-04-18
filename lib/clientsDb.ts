@@ -1,15 +1,6 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  orderBy,
-  query,
-} from "firebase/firestore";
+import { collection, doc, getDocs, getDoc, orderBy, query } from "firebase/firestore";
 import { db, auth, authReady } from "./firebase";
+import { restPost, restUpdate, restDelete } from "./firestoreRest";
 import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 import type { Client } from "./types";
 
@@ -41,21 +32,18 @@ export async function getClient(id: string): Promise<Client | null> {
 }
 
 export async function addClient(data: Omit<Client, "id">): Promise<string> {
-  if (!auth.currentUser) await authReady;
-  const ref = await addDoc(col, data);
+  const id = await restPost("clients", data as unknown as Record<string, unknown>);
   cacheInvalidate(KEY);
-  return ref.id;
+  return id;
 }
 
 export async function updateClient(id: string, data: Partial<Client>): Promise<void> {
-  if (!auth.currentUser) await authReady;
-  await updateDoc(doc(db, "clients", id), data);
+  await restUpdate("clients", id, data as Record<string, unknown>);
   cacheInvalidate(KEY);
 }
 
 export async function deleteClient(id: string): Promise<void> {
-  if (!auth.currentUser) await authReady;
-  await deleteDoc(doc(db, "clients", id));
+  await restDelete("clients", id);
   cacheInvalidate(KEY);
 }
 

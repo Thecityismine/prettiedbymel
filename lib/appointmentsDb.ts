@@ -3,14 +3,11 @@ import {
   doc,
   getDocs,
   getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
   orderBy,
   query,
-  increment,
 } from "firebase/firestore";
 import { db, auth, authReady } from "./firebase";
+import { restPost, restUpdate, restDelete } from "./firestoreRest";
 import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 import { updateClient } from "./clientsDb";
 import type { Appointment } from "./types";
@@ -43,21 +40,18 @@ export async function getAppointment(id: string): Promise<Appointment | null> {
 }
 
 export async function addAppointment(data: Omit<Appointment, "id">): Promise<string> {
-  if (!auth.currentUser) await authReady;
-  const ref = await addDoc(col, data);
+  const id = await restPost("appointments", data as unknown as Record<string, unknown>);
   cacheInvalidate(KEY);
-  return ref.id;
+  return id;
 }
 
 export async function updateAppointment(id: string, data: Partial<Appointment>): Promise<void> {
-  if (!auth.currentUser) await authReady;
-  await updateDoc(doc(db, "appointments", id), data);
+  await restUpdate("appointments", id, data as Record<string, unknown>);
   cacheInvalidate(KEY);
 }
 
 export async function deleteAppointment(id: string): Promise<void> {
-  if (!auth.currentUser) await authReady;
-  await deleteDoc(doc(db, "appointments", id));
+  await restDelete("appointments", id);
   cacheInvalidate(KEY);
 }
 
@@ -71,15 +65,17 @@ export async function markDone(appt: Appointment): Promise<void> {
 }
 
 export async function markNoShow(appt: Appointment): Promise<void> {
-  if (!auth.currentUser) await authReady;
-  await updateDoc(doc(db, "appointments", appt.id), {
+  await restUpdate("appointments", appt.id, {
     status: "no-show",
     depositKept: appt.depositPaid,
   });
   cacheInvalidate(KEY);
-  await updateDoc(doc(db, "clients", appt.clientId), {
-    noShowCount: increment(1),
-  });
+  // increment noShowCount via read-modify-write
+  const client = await getDoc(doc(db, "clients", appt.clientId));
+  if (client.exists()) {
+    const current = (client.data().noShowCount as number) ?? 0;
+    await restUpdate("clients", appt.clientId, { noShowCount: current + 1 });
+  }
 }
 
 export function formatApptDate(dateStr: string): string {

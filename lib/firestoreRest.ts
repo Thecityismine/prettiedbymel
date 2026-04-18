@@ -136,3 +136,49 @@ export async function restPatch(
     throw new Error(`Firestore write failed (${res.status}): ${msg}`);
   }
 }
+
+// PATCH only specific fields (like Firestore updateDoc).
+export async function restUpdate(
+  collection: string,
+  docId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  if (!auth.currentUser) await authReady;
+  const token = await auth.currentUser!.getIdToken();
+  const fields = Object.keys(data);
+  const mask = fields.map((f) => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join("&");
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/${collection}/${docId}?${mask}`;
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(toDocument(data)),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`Firestore update failed (${res.status}): ${msg}`);
+  }
+}
+
+export async function restDelete(
+  collection: string,
+  docId: string,
+): Promise<void> {
+  if (!auth.currentUser) await authReady;
+  const token = await auth.currentUser!.getIdToken();
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/${collection}/${docId}`;
+
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`Firestore delete failed (${res.status}): ${msg}`);
+  }
+}
