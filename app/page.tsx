@@ -392,7 +392,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
       .finally(() => setSlotsLoading(false));
   }, [selectedDate, selectedService]);
 
-  const payDetails = { cashapp: "$zzmell", zelle: "melaniemedina071@gmail.com" };
+  const payDetails = { cashapp: "$zzmell", zelle: "(929) 595-4095" };
 
   async function handlePay() {
     if (!selectedService || !selectedDate || !selectedTime) return;
