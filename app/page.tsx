@@ -578,13 +578,15 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Pick a date</p>
-              <input
-                type="date"
-                min={today}
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[var(--color-pink)] transition-colors"
-              />
+              <div className="overflow-hidden rounded-xl">
+                <input
+                  type="date"
+                  min={today}
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full max-w-full block bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[var(--color-pink)] transition-colors"
+                />
+              </div>
             </div>
             {selectedDate && (
               <div>
