@@ -1,4 +1,5 @@
-const CACHE = "pbm-v1";
+const CACHE = "pbm-v2";
+const STATIC_CACHE = "pbm-static-v2";
 
 const SHELL = [
   "/",
@@ -24,7 +25,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))
+        keys.filter((key) => key !== CACHE && key !== STATIC_CACHE).map((key) => caches.delete(key))
       )
     )
   );
@@ -36,7 +37,7 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET, cross-origin, API routes, and Firebase traffic
+  // Skip non-GET, API routes, and third-party traffic
   if (
     request.method !== "GET" ||
     url.origin !== self.location.origin ||
@@ -48,7 +49,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigation requests — network first, fall back to cached "/"
+  // Next.js hashed static assets — cache forever (immutable)
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(
+      caches.open(STATIC_CACHE).then((cache) =>
+        cache.match(request).then(
+          (cached) =>
+            cached ??
+            fetch(request).then((res) => {
+              cache.put(request, res.clone());
+              return res;
+            })
+        )
+      )
+    );
+    return;
+  }
+
+  // Navigation requests — network first, fall back to cached shell
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -62,7 +80,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets — cache first, network fallback
+  // Other same-origin assets — cache first, network fallback
   event.respondWith(
     caches.match(request).then(
       (cached) =>
@@ -76,7 +94,7 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Push notifications (Phase 6 FCM integration)
+// Push notifications
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
   event.waitUntil(

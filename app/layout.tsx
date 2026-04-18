@@ -49,6 +49,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geist.variable} ${playfair.variable} ${dancing.variable} h-full`}>
+      <head>
+        <link rel="preconnect" href="https://firestore.googleapis.com" />
+        <link rel="preconnect" href="https://securetoken.googleapis.com" />
+        <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
+        <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
+      </head>
       <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)] select-none">
         <ServiceWorkerRegistrar />
         <AuthProvider>

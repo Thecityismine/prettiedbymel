@@ -5,11 +5,22 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import LoginForm from "./LoginForm";
 
+const AUTH_KEY = "pbm_auth";
+
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null | undefined>(undefined);
+  // Optimistic: if we've seen a logged-in session before, assume still logged in.
+  // onAuthStateChanged will correct to null within ~100ms if the session expired.
+  const [user, setUser] = useState<User | null | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
+    return localStorage.getItem(AUTH_KEY) === "1" ? ("optimistic" as unknown as User) : undefined;
+  });
 
   useEffect(() => {
-    return onAuthStateChanged(auth, (u) => setUser(u));
+    return onAuthStateChanged(auth, (u) => {
+      if (u) localStorage.setItem(AUTH_KEY, "1");
+      else localStorage.removeItem(AUTH_KEY);
+      setUser(u);
+    });
   }, []);
 
   if (user === undefined) {
