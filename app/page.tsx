@@ -91,7 +91,19 @@ function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
     try {
       if (mode === "signup") {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        if (name.trim()) await updateProfile(cred.user, { displayName: name.trim() });
+        const displayName = name.trim() || email.split("@")[0];
+        if (name.trim()) await updateProfile(cred.user, { displayName });
+        await addDoc(collection(db, "clients"), {
+          name: displayName,
+          email,
+          phone: "",
+          firebaseUid: cred.user.uid,
+          totalSpent: 0,
+          noShowCount: 0,
+          depositPaid: false,
+          createdAt: new Date().toISOString(),
+          source: "self-signup",
+        });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
