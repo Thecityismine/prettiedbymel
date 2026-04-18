@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -12,13 +12,18 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const isNew = getApps().length === 0;
+const app = isNew ? initializeApp(firebaseConfig) : getApps()[0];
 
-export const db = getFirestore(app);
+// Force long-polling instead of WebSockets — fixes write hangs on mobile
+// networks and environments where WebChannel (gRPC-web) is blocked.
+export const db = isNew
+  ? initializeFirestore(app, { experimentalForceLongPolling: true })
+  : getFirestore(app);
+
 export const auth = getAuth(app);
 
 // Resolves once Firebase has read auth state from IndexedDB (~50-200ms).
-// Await this before any Firestore call to prevent permission-denied retry loops.
 export const authReady: Promise<void> = auth.authStateReady();
 
 export default app;
