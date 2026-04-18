@@ -9,33 +9,38 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db, authReady } from "./firebase";
 import { updateClient } from "./clientsDb";
 import type { Appointment } from "./types";
 
 const col = collection(db, "appointments");
 
 export async function getAppointments(): Promise<Appointment[]> {
+  await authReady;
   const snap = await getDocs(query(col, orderBy("date"), orderBy("time")));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Appointment));
 }
 
 export async function getAppointment(id: string): Promise<Appointment | null> {
+  await authReady;
   const snap = await getDoc(doc(db, "appointments", id));
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as Appointment;
 }
 
 export async function addAppointment(data: Omit<Appointment, "id">): Promise<string> {
+  await authReady;
   const ref = await addDoc(col, data);
   return ref.id;
 }
 
 export async function updateAppointment(id: string, data: Partial<Appointment>): Promise<void> {
+  await authReady;
   await updateDoc(doc(db, "appointments", id), data);
 }
 
 export async function deleteAppointment(id: string): Promise<void> {
+  await authReady;
   await deleteDoc(doc(db, "appointments", id));
 }
 

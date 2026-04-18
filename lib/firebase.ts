@@ -16,4 +16,9 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+
+// Resolves once Firebase has read auth state from IndexedDB (~50-200ms).
+// Await this before any Firestore call to prevent permission-denied retry loops.
+export const authReady: Promise<void> = auth.authStateReady();
+
 export default app;

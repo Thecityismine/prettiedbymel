@@ -15,17 +15,15 @@ export default function PricingPage() {
   const [editMode, setEditMode] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [draft, setDraft] = useState<Service[]>(defaultServices);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Show defaultServices immediately; replace with Firestore data once auth is ready.
   useEffect(() => {
-    loadServices()
-      .then((s) => {
-        setServices(s);
-        setDraft(s);
-      })
-      .finally(() => setLoading(false));
+    loadServices().then((s) => {
+      setServices(s);
+      setDraft(s);
+    });
   }, []);
 
   function startEdit() {
@@ -85,14 +83,6 @@ export default function PricingPage() {
 
   const displayed = editMode ? draft : services;
   const categories: Category[] = ["basic", "acrylic", "addon"];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[var(--color-pink)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   if (previewMode) {
     return <PricingPreview services={services} onClose={() => setPreviewMode(false)} onShare={handleShare} copied={copied} />;
