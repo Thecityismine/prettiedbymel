@@ -15,7 +15,8 @@ import type { Service, Appointment } from "@/lib/types";
 
 type Screen = "auth" | "portal" | "booking";
 type AuthMode = "signin" | "signup";
-type BookStep = "service" | "datetime" | "review";
+type BookStep = "service" | "datetime" | "review" | "pending";
+type PayMethod = "card" | "cashapp" | "zelle";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
@@ -372,6 +373,8 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
   const [selectedTime, setSelectedTime] = useState("");
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [payMethod, setPayMethod] = useState<PayMethod>("card");
+  const [copied, setCopied] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -389,6 +392,8 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
       .finally(() => setSlotsLoading(false));
   }, [selectedDate, selectedService]);
 
+  const payDetails = { cashapp: "$zzmell", zelle: "melaniemedina071@gmail.com" };
+
   async function handlePay() {
     if (!selectedService || !selectedDate || !selectedTime) return;
     setSubmitting(true);
@@ -404,6 +409,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
         duration: selectedService.duration,
         date: selectedDate,
         time: selectedTime,
+        paymentMethod: "card",
       }),
     });
     const { url } = await res.json();
@@ -411,12 +417,39 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
     else setSubmitting(false);
   }
 
+  async function handleManualPay() {
+    if (!selectedService || !selectedDate || !selectedTime) return;
+    setSubmitting(true);
+    await fetch("/api/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientFirebaseUid: user.uid,
+        clientName: user.displayName ?? user.email?.split("@")[0] ?? "Client",
+        serviceId: selectedService.id,
+        serviceName: selectedService.name,
+        price: selectedService.price,
+        duration: selectedService.duration,
+        date: selectedDate,
+        time: selectedTime,
+        paymentMethod: payMethod,
+      }),
+    });
+    setSubmitting(false);
+    setStep("pending");
+  }
+
+  function copyHandle() {
+    const val = payDetails[payMethod as "cashapp" | "zelle"];
+    if (val) navigator.clipboard.writeText(val).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+
   const stepIndex = ["service", "datetime", "review"].indexOf(step);
 
   function goBack() {
     if (step === "service") onBack();
     else if (step === "datetime") setStep("service");
-    else setStep("datetime");
+    else if (step === "review") setStep("datetime");
   }
 
   return (
@@ -531,7 +564,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
 
         {step === "review" && selectedService && (
           <>
-            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Review & pay deposit</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Review your booking</p>
             <div className="bg-gradient-to-b from-[var(--color-pink)]/15 to-[var(--color-card)] border border-[var(--color-pink)]/20 rounded-2xl p-5 space-y-3">
               <Row label="Service" value={selectedService.name} />
               <Row label="Date" value={new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} />
@@ -548,17 +581,94 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
                 <span className="text-[var(--color-pink)] font-black text-lg">$10</span>
               </div>
             </div>
-            <p className="text-zinc-500 text-xs text-center">
-              The $10 deposit locks in your appointment. The remaining ${selectedService.price - 10} is due at your visit.
+
+            {/* Payment method */}
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Pay $10 deposit via</p>
+            <div className="flex flex-col gap-2">
+              {(["card", "cashapp", "zelle"] as PayMethod[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setPayMethod(m)}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all ${
+                    payMethod === m
+                      ? "bg-[var(--color-pink)]/10 border-[var(--color-pink)] text-white"
+                      : "bg-[var(--color-card)] border-[var(--color-border)] text-zinc-400"
+                  }`}
+                >
+                  <span className="text-lg">{m === "card" ? "💳" : m === "cashapp" ? "💚" : "💜"}</span>
+                  <div>
+                    <p className="text-sm font-semibold leading-none">
+                      {m === "card" ? "Credit / Debit Card" : m === "cashapp" ? "Cash App" : "Zelle"}
+                    </p>
+                    {m !== "card" && (
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        {payDetails[m]}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Card pay */}
+            {payMethod === "card" && (
+              <button
+                onClick={handlePay}
+                disabled={submitting}
+                className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60"
+              >
+                {submitting ? "Redirecting…" : "Pay $10 by Card →"}
+              </button>
+            )}
+
+            {/* CashApp / Zelle pay */}
+            {(payMethod === "cashapp" || payMethod === "zelle") && (
+              <div className="space-y-3">
+                <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-zinc-500 mb-0.5">{payMethod === "cashapp" ? "Cash App" : "Zelle"} handle</p>
+                    <p className="text-white font-bold">{payDetails[payMethod]}</p>
+                  </div>
+                  <button
+                    onClick={copyHandle}
+                    className="text-xs text-[var(--color-pink)] font-semibold shrink-0 hover:opacity-70 transition-opacity"
+                  >
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+                <p className="text-zinc-500 text-xs text-center px-2">
+                  Send exactly $10 and include your name in the note.
+                </p>
+                <button
+                  onClick={handleManualPay}
+                  disabled={submitting}
+                  className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60"
+                >
+                  {submitting ? "Confirming…" : "I've Sent the $10 ✓"}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Pending confirmation (manual payments) */}
+        {step === "pending" && (
+          <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
+            <p className="text-5xl">💅</p>
+            <h2 className="font-playfair text-2xl font-black text-white tracking-widest uppercase">You&apos;re Almost In!</h2>
+            <p className="text-zinc-400 text-sm max-w-xs leading-relaxed">
+              Once your $10 {payMethod === "cashapp" ? "Cash App" : "Zelle"} payment is received, your appointment will be confirmed.
+            </p>
+            <p className="text-zinc-500 text-xs">
+              Questions? DM <span className="text-[var(--color-pink)]">@prettiedbymel</span> on Instagram.
             </p>
             <button
-              onClick={handlePay}
-              disabled={submitting}
-              className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60"
+              onClick={onBack}
+              className="mt-4 text-[var(--color-pink)] text-sm font-semibold hover:underline"
             >
-              {submitting ? "Redirecting to payment…" : "💳 Pay $10 Deposit"}
+              ← Back to my appointments
             </button>
-          </>
+          </div>
         )}
       </div>
 
