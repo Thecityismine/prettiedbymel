@@ -148,7 +148,7 @@ function NewAppointmentForm() {
         </Field>
 
         {/* Date + Time */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <Field label="Date">
             <input
               className={baseCls}

@@ -98,8 +98,20 @@ export default function AppointmentsPage() {
 
         {/* List */}
         {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-6 h-6 border-2 border-[var(--color-pink)] border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-2xl p-4 animate-pulse">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="h-3.5 bg-zinc-800 rounded-full w-1/3" />
+                  <div className="h-5 bg-zinc-800 rounded-full w-16" />
+                </div>
+                <div className="h-3 bg-zinc-800 rounded-full w-2/5 mb-3" />
+                <div className="flex gap-4">
+                  <div className="h-2.5 bg-zinc-800 rounded-full w-20" />
+                  <div className="h-2.5 bg-zinc-800 rounded-full w-14" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">

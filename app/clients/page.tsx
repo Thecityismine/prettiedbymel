@@ -57,28 +57,43 @@ export default function ClientsPage() {
         {/* Stats row */}
         {!query && (
           <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "Total", value: clients.length },
-              { label: "Overdue", value: overdue.length },
-              { label: "This month", value: clients.filter((c) => {
-                if (!c.lastVisit) return false;
-                const d = new Date(c.lastVisit);
-                const now = new Date();
-                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-              }).length },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-3 text-center">
-                <p className="text-xl font-bold text-white">{value}</p>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wide mt-0.5">{label}</p>
-              </div>
-            ))}
+            {loading
+              ? [1, 2, 3].map((i) => (
+                  <div key={i} className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-3 text-center animate-pulse">
+                    <div className="h-6 bg-zinc-800 rounded-full w-8 mx-auto mb-1.5" />
+                    <div className="h-2 bg-zinc-800 rounded-full w-12 mx-auto" />
+                  </div>
+                ))
+              : [
+                  { label: "Total", value: clients.length },
+                  { label: "Overdue", value: overdue.length },
+                  { label: "This month", value: clients.filter((c) => {
+                    if (!c.lastVisit) return false;
+                    const d = new Date(c.lastVisit);
+                    const now = new Date();
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                  }).length },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-3 text-center">
+                    <p className="text-xl font-bold text-white">{value}</p>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wide mt-0.5">{label}</p>
+                  </div>
+                ))}
           </div>
         )}
 
         {/* Client list */}
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-6 h-6 border-2 border-[var(--color-pink)] border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-2xl p-4 animate-pulse">
+                <div className="w-11 h-11 rounded-full bg-zinc-800 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 bg-zinc-800 rounded-full w-2/5" />
+                  <div className="h-2.5 bg-zinc-800 rounded-full w-1/3" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
