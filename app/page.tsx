@@ -726,18 +726,18 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
 
         {/* Pending confirmation (manual payments) */}
         {step === "pending" && (
-          <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-            <p className="text-5xl">💅</p>
-            <h2 className="font-playfair text-2xl font-black text-white tracking-widest uppercase">You&apos;re Almost In!</h2>
-            <p className="text-zinc-400 text-sm max-w-xs leading-relaxed">
+          <div className="flex flex-col items-center justify-center py-16 text-center space-y-5">
+            <p className="text-6xl">💅</p>
+            <h2 className="font-playfair text-3xl font-black text-white tracking-widest uppercase">You&apos;re Almost In!</h2>
+            <p className="text-zinc-300 text-base max-w-xs leading-relaxed">
               Once your $10 {payMethod === "cashapp" ? "Cash App" : "Zelle"} payment is received, your appointment will be confirmed.
             </p>
-            <p className="text-zinc-500 text-xs">
+            <p className="text-zinc-400 text-sm">
               Questions? DM <span className="text-[var(--color-pink)]">@prettiedbymel</span> on Instagram.
             </p>
             <button
               onClick={onBack}
-              className="mt-4 text-[var(--color-pink)] text-sm font-semibold hover:underline"
+              className="mt-4 text-[var(--color-pink)] text-base font-semibold hover:underline"
             >
               ← Back to my appointments
             </button>
