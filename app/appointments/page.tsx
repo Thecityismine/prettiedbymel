@@ -136,7 +136,7 @@ export default function AppointmentsPage() {
       {/* FAB */}
       <Link
         href="/appointments/new"
-        className="fixed bottom-20 right-5 w-14 h-14 bg-[var(--color-pink)] rounded-full flex items-center justify-center shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors z-40"
+        className="fixed bottom-20 right-5 w-14 h-14 bg-[var(--color-pink)] rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(255,26,173,0.35)] hover:bg-[var(--color-pink-dark)] hover:shadow-[0_0_18px_rgba(255,26,173,0.5)] transition-all duration-300 z-40 animate-[fab-pulse_3s_ease-in-out_infinite]"
       >
         <Plus size={24} className="text-white" />
       </Link>

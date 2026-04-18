@@ -40,3 +40,8 @@ body {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 16px);
 }
+
+@keyframes fab-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 26, 173, 0.3); }
+  50% { box-shadow: 0 0 18px rgba(255, 26, 173, 0.55); }
+}

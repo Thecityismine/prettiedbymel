@@ -10,6 +10,14 @@ import type { Service } from "@/lib/types";
 
 type Category = Service["category"];
 
+function fmtDuration(mins: number): string {
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (m === 0) return h === 1 ? "1 hr" : `${h} hrs`;
+  return `${h} hr ${m} min`;
+}
+
 export default function PricingPage() {
   const [services, setServices] = useState<Service[]>(defaultServices);
   const [editMode, setEditMode] = useState(false);
@@ -17,6 +25,7 @@ export default function PricingPage() {
   const [draft, setDraft] = useState<Service[]>(defaultServices);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Show defaultServices immediately; replace with Firestore data once auth is ready.
   useEffect(() => {
@@ -132,12 +141,30 @@ export default function PricingPage() {
 
       <div className="px-5 pb-6 space-y-6">
         {/* Deposit notice */}
-        <div className="rounded-xl bg-[var(--color-pink)]/10 border border-[var(--color-pink)]/20 px-4 py-3 flex items-center gap-3">
-          <span className="text-lg">💳</span>
-          <p className="text-sm text-zinc-300">
-            <span className="text-[var(--color-pink)] font-semibold">$10 deposit</span> required to lock in your appointment
-          </p>
+        <div className="rounded-xl bg-[var(--color-pink)]/10 border border-[var(--color-pink)]/20 px-4 py-4 flex items-center gap-4">
+          <div className="w-9 h-9 rounded-lg bg-[var(--color-pink)]/20 flex items-center justify-center shrink-0">
+            <span className="text-base">💳</span>
+          </div>
+          <div>
+            <p className="text-white font-semibold text-sm">Deposit Required</p>
+            <p className="text-zinc-500 text-xs mt-0.5">$10 secures your spot · applied to your total</p>
+          </div>
         </div>
+
+        {/* Selection summary */}
+        {selectedId && (() => {
+          const s = displayed.find(x => x.id === selectedId);
+          if (!s) return null;
+          return (
+            <div className="rounded-xl bg-gradient-to-r from-[var(--color-pink)]/15 to-transparent border border-[var(--color-pink)]/30 px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="text-white font-semibold text-sm">{s.emoji} {s.name}</p>
+                <p className="text-zinc-500 text-xs mt-0.5">{fmtDuration(s.duration ?? 60)}</p>
+              </div>
+              <p className="text-[var(--color-pink)] font-black text-xl">${s.price}</p>
+            </div>
+          );
+        })()}
 
         {/* Service groups */}
         {categories.map((cat) => {
@@ -154,6 +181,8 @@ export default function PricingPage() {
                     key={service.id}
                     service={service}
                     editMode={editMode}
+                    selected={selectedId === service.id}
+                    onSelect={() => !editMode && setSelectedId(selectedId === service.id ? null : service.id)}
                     onNameChange={(v) => updateName(service.id, v)}
                     onPriceChange={(v) => updatePrice(service.id, v)}
                     onDurationChange={(v) => updateDuration(service.id, v)}
@@ -178,22 +207,24 @@ export default function PricingPage() {
 }
 
 function ServiceRow({
-  service,
-  editMode,
-  onNameChange,
-  onPriceChange,
-  onDurationChange,
-  onRemove,
+  service, editMode, selected, onSelect,
+  onNameChange, onPriceChange, onDurationChange, onRemove,
 }: {
-  service: Service;
-  editMode: boolean;
-  onNameChange: (v: string) => void;
-  onPriceChange: (v: string) => void;
-  onDurationChange: (v: string) => void;
-  onRemove: () => void;
+  service: Service; editMode: boolean; selected: boolean; onSelect: () => void;
+  onNameChange: (v: string) => void; onPriceChange: (v: string) => void;
+  onDurationChange: (v: string) => void; onRemove: () => void;
 }) {
   return (
-    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3">
+    <div
+      onClick={!editMode ? onSelect : undefined}
+      className={`rounded-xl px-4 py-3.5 border transition-all duration-200 ${
+        editMode
+          ? "bg-[var(--color-card)] border-[var(--color-border)]"
+          : selected
+          ? "bg-[var(--color-pink)]/10 border-[var(--color-pink)]/60 cursor-pointer active:scale-[0.98]"
+          : "bg-[var(--color-card)] border-[var(--color-border)] cursor-pointer hover:border-zinc-600 active:scale-[0.98]"
+      }`}
+    >
       {editMode ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -232,9 +263,13 @@ function ServiceRow({
       ) : (
         <div className="flex items-center gap-3">
           <span className="text-xl w-7 shrink-0">{service.emoji}</span>
-          <span className="flex-1 text-white text-sm font-medium">{service.name}</span>
-          <span className="text-zinc-500 text-xs">{service.duration ?? 60}m</span>
-          <span className="text-[var(--color-pink)] font-bold text-sm">${service.price}</span>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-semibold ${selected ? "text-white" : "text-zinc-200"}`}>{service.name}</p>
+            <p className="text-zinc-500 text-xs mt-0.5">{fmtDuration(service.duration ?? 60)}</p>
+          </div>
+          <span className={`font-bold text-sm shrink-0 ${selected ? "text-[var(--color-pink)]" : "text-[var(--color-pink)]"}`}>
+            ${service.price}
+          </span>
         </div>
       )}
     </div>
