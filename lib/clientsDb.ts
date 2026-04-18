@@ -1,6 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db, auth, authReady } from "./firebase";
-import { restList, restPost, restUpdate, restDelete } from "./firestoreRest";
+import { restList, restGet, restPost, restUpdate, restDelete } from "./firestoreRest";
 import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 import type { Client } from "./types";
 
@@ -23,10 +21,9 @@ export async function getClients(): Promise<Client[]> {
 }
 
 export async function getClient(id: string): Promise<Client | null> {
-  if (!auth.currentUser) await authReady;
-  const snap = await getDoc(doc(db, "clients", id));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as Client;
+  const data = await restGet("clients", id);
+  if (!data) return null;
+  return { id, ...data } as unknown as Client;
 }
 
 export async function addClient(data: Omit<Client, "id">): Promise<string> {

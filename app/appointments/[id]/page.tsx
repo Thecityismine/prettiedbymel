@@ -251,6 +251,15 @@ function AppointmentDetail({ params }: { params: Promise<{ id: string }> }) {
           <div className="space-y-3 pt-2">
             {!appt.depositPaid && (
               <>
+                <button
+                  onClick={async () => {
+                    await updateAppointment(id, { depositPaid: true });
+                    setAppt({ ...appt, depositPaid: true });
+                  }}
+                  className="w-full py-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/25 transition-colors"
+                >
+                  ✓ Mark deposit as received
+                </button>
                 <Button variant="outline" fullWidth onClick={sendDepositLink} disabled={sendingDeposit}>
                   <Send size={14} className="inline mr-1.5" />
                   {sendingDeposit ? "Generating link…" : "Send $10 Deposit Link"}

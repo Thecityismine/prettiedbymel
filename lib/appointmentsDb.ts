@@ -1,6 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db, auth, authReady } from "./firebase";
-import { restList, restPost, restUpdate, restDelete, restGet } from "./firestoreRest";
+import { restList, restGet, restPost, restUpdate, restDelete } from "./firestoreRest";
 import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 import { updateClient } from "./clientsDb";
 import type { Appointment } from "./types";
@@ -27,10 +25,9 @@ export async function getAppointments(): Promise<Appointment[]> {
 }
 
 export async function getAppointment(id: string): Promise<Appointment | null> {
-  if (!auth.currentUser) await authReady;
-  const snap = await getDoc(doc(db, "appointments", id));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as Appointment;
+  const data = await restGet("appointments", id);
+  if (!data) return null;
+  return { id, ...data } as unknown as Appointment;
 }
 
 export async function addAppointment(data: Omit<Appointment, "id">): Promise<string> {
