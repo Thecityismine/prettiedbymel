@@ -7,7 +7,8 @@ import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut as firebaseSignOut, updateProfile,
 } from "firebase/auth";
-import { collection, query, where, getDocs, orderBy, addDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { restPost } from "@/lib/firestoreRest";
 import { ChevronLeft, Clock, ChevronRight, CalendarDays, LogOut, Plus, Lock } from "lucide-react";
 import { auth, db, authReady } from "@/lib/firebase";
 import { formatSlot, loadAvailability, getAvailableSlots, defaultAvailability } from "@/lib/availabilityDb";
@@ -93,7 +94,7 @@ function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const displayName = name.trim() || email.split("@")[0];
         if (name.trim()) await updateProfile(cred.user, { displayName });
-        await addDoc(collection(db, "clients"), {
+        await restPost("clients", {
           name: displayName,
           email,
           phone: "",
@@ -480,7 +481,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
     if (!selectedService || !selectedDate || !selectedTime) return;
     setSubmitting(true);
     try {
-      await addDoc(collection(db, "appointments"), {
+      await restPost("appointments", {
         clientId: user.uid,
         clientName: user.displayName ?? user.email?.split("@")[0] ?? "Client",
         serviceId: selectedService.id,

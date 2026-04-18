@@ -37,6 +37,34 @@ function toDocument(obj: Record<string, unknown>) {
 
 const PROJECT = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!;
 
+// POST to a collection — Firestore assigns a random document ID, returns it.
+export async function restPost(
+  col: string,
+  data: Record<string, unknown>,
+): Promise<string> {
+  if (!auth.currentUser) await authReady;
+  const token = await auth.currentUser!.getIdToken();
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/${col}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(toDocument(data)),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`Firestore create failed (${res.status}): ${msg}`);
+  }
+
+  const json = await res.json();
+  // name is like "projects/.../databases/.../documents/clients/DOCID"
+  return (json.name as string).split("/").pop()!;
+}
+
 export async function restPatch(
   collection: string,
   docId: string,
