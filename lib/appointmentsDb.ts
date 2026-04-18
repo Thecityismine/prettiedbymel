@@ -1,24 +1,18 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  orderBy,
-  query,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth, authReady } from "./firebase";
-import { restPost, restUpdate, restDelete } from "./firestoreRest";
+import { restList, restPost, restUpdate, restDelete, restGet } from "./firestoreRest";
 import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 import { updateClient } from "./clientsDb";
 import type { Appointment } from "./types";
 
-const col = collection(db, "appointments");
 const KEY = "appointments";
 
 async function fetchAppointments(): Promise<Appointment[]> {
-  if (!auth.currentUser) await authReady;
-  const snap = await getDocs(query(col, orderBy("date"), orderBy("time")));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Appointment));
+  const docs = await restList("appointments");
+  return (docs as unknown as Appointment[]).sort((a, b) => {
+    const d = a.date.localeCompare(b.date);
+    return d !== 0 ? d : a.time.localeCompare(b.time);
+  });
 }
 
 export async function getAppointments(): Promise<Appointment[]> {
@@ -70,10 +64,9 @@ export async function markNoShow(appt: Appointment): Promise<void> {
     depositKept: appt.depositPaid,
   });
   cacheInvalidate(KEY);
-  // increment noShowCount via read-modify-write
-  const client = await getDoc(doc(db, "clients", appt.clientId));
-  if (client.exists()) {
-    const current = (client.data().noShowCount as number) ?? 0;
+  const raw = await restGet("clients", appt.clientId);
+  if (raw) {
+    const current = (raw.noShowCount as number) ?? 0;
     await restUpdate("clients", appt.clientId, { noShowCount: current + 1 });
   }
 }

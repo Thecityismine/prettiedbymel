@@ -37,6 +37,41 @@ function toDocument(obj: Record<string, unknown>) {
 
 const PROJECT = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!;
 
+// List all documents in a collection. Returns array of {id, ...fields}.
+export async function restList(col: string): Promise<Record<string, unknown>[]> {
+  if (!auth.currentUser) await authReady;
+  const token = await auth.currentUser!.getIdToken();
+
+  const results: Record<string, unknown>[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const url = new URL(
+      `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/${col}`
+    );
+    url.searchParams.set("pageSize", "300");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      const msg = await res.text().catch(() => res.statusText);
+      throw new Error(`Firestore list failed (${res.status}): ${msg}`);
+    }
+
+    const json = await res.json();
+    for (const doc of json.documents ?? []) {
+      const id = (doc.name as string).split("/").pop()!;
+      results.push({ id, ...fromDocument(doc.fields ?? {}) });
+    }
+    pageToken = json.nextPageToken;
+  } while (pageToken);
+
+  return results;
+}
+
 // GET a single document. Returns null if it doesn't exist.
 export async function restGet(
   col: string,

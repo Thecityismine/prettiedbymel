@@ -7,10 +7,9 @@ import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut as firebaseSignOut, updateProfile,
 } from "firebase/auth";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { restPost } from "@/lib/firestoreRest";
+import { restPost, restList } from "@/lib/firestoreRest";
 import { ChevronLeft, Clock, ChevronRight, CalendarDays, LogOut, Plus, Lock } from "lucide-react";
-import { auth, db, authReady } from "@/lib/firebase";
+import { auth, authReady } from "@/lib/firebase";
 import { formatSlot, loadAvailability, getAvailableSlots, defaultAvailability } from "@/lib/availabilityDb";
 import { loadServices } from "@/lib/pricingDb";
 import { defaultServices } from "@/lib/defaultServices";
@@ -292,14 +291,10 @@ function ClientPortal({
   useEffect(() => {
     async function load() {
       try {
-        if (!auth.currentUser) await authReady;
-        const q = query(
-          collection(db, "appointments"),
-          where("clientId", "==", user.uid)
-        );
-        const snap = await getDocs(q);
-        const appts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Appointment));
-        appts.sort((a, b) => b.date.localeCompare(a.date));
+        const all = await restList("appointments");
+        const appts = (all as unknown as Appointment[])
+          .filter((a) => a.clientId === user.uid)
+          .sort((a, b) => b.date.localeCompare(a.date));
         setAppointments(appts);
       } catch {
         // show empty state
@@ -420,22 +415,14 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
 
       const avail = await withFallback(loadAvailability(), defaultAvailability);
 
-      const apptsSnap = await withFallback(
-        getDocs(query(
-          collection(db, "appointments"),
-          where("date", "==", selectedDate),
-          where("status", "==", "upcoming")
-        )),
-        null
-      );
-
-      const booked = apptsSnap
-        ? apptsSnap.docs.map((d) => ({
-            date: d.data().date as string,
-            time: d.data().time as string,
-            duration: d.data().duration as number | undefined,
-          }))
-        : [];
+      const allAppts = await withFallback(restList("appointments"), []);
+      const booked = allAppts
+        .filter((d) => d.date === selectedDate && d.status === "upcoming")
+        .map((d) => ({
+          date: d.date as string,
+          time: d.time as string,
+          duration: d.duration as number | undefined,
+        }));
 
       const dur = selectedService!.duration ?? 60;
       const all = getAvailableSlots(selectedDate, avail, booked);

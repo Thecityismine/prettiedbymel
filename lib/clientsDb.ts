@@ -1,16 +1,14 @@
-import { collection, doc, getDocs, getDoc, orderBy, query } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth, authReady } from "./firebase";
-import { restPost, restUpdate, restDelete } from "./firestoreRest";
+import { restList, restPost, restUpdate, restDelete } from "./firestoreRest";
 import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
 import type { Client } from "./types";
 
-const col = collection(db, "clients");
 const KEY = "clients";
 
 async function fetchClients(): Promise<Client[]> {
-  if (!auth.currentUser) await authReady;
-  const snap = await getDocs(query(col, orderBy("name")));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Client));
+  const docs = await restList("clients");
+  return (docs as unknown as Client[]).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getClients(): Promise<Client[]> {
