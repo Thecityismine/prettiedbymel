@@ -23,9 +23,14 @@ export default function AlertsPage() {
 
   async function load() {
     setLoading(true);
-    const [clients, appointments] = await Promise.all([getClients(), getAppointments()]);
-    setAlerts(computeAlerts(clients, appointments));
-    setLoading(false);
+    try {
+      const [clients, appointments] = await Promise.all([getClients(), getAppointments()]);
+      setAlerts(computeAlerts(clients, appointments));
+    } catch {
+      // show empty alerts on error
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

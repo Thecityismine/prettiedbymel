@@ -7,10 +7,10 @@ import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut as firebaseSignOut, updateProfile,
 } from "firebase/auth";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, addDoc } from "firebase/firestore";
 import { ChevronLeft, Clock, ChevronRight, CalendarDays, LogOut, Plus, Lock } from "lucide-react";
 import { auth, db, authReady } from "@/lib/firebase";
-import { formatSlot } from "@/lib/availabilityDb";
+import { formatSlot, loadAvailability, getAvailableSlots } from "@/lib/availabilityDb";
 import { loadServices } from "@/lib/pricingDb";
 import type { Service, Appointment } from "@/lib/types";
 
@@ -277,15 +277,20 @@ function ClientPortal({
 
   useEffect(() => {
     async function load() {
-      await authReady;
-      const q = query(
-        collection(db, "appointments"),
-        where("clientId", "==", user.uid),
-        orderBy("date", "desc")
-      );
-      const snap = await getDocs(q);
-      setAppointments(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Appointment)));
-      setLoading(false);
+      try {
+        if (!auth.currentUser) await authReady;
+        const q = query(
+          collection(db, "appointments"),
+          where("clientId", "==", user.uid),
+          orderBy("date", "desc")
+        );
+        const snap = await getDocs(q);
+        setAppointments(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Appointment)));
+      } catch {
+        // show empty state
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [user.uid]);
@@ -387,10 +392,28 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
     if (!selectedDate || !selectedService) return;
     setSlotsLoading(true);
     setSelectedTime("");
-    fetch(`/api/book/slots?date=${selectedDate}&duration=${selectedService.duration ?? 60}`)
-      .then((r) => r.json())
-      .then((d) => setSlots(d.slots ?? []))
-      .finally(() => setSlotsLoading(false));
+    async function loadSlots() {
+      const [avail, apptsSnap] = await Promise.all([
+        loadAvailability(),
+        getDocs(query(
+          collection(db, "appointments"),
+          where("date", "==", selectedDate),
+          where("status", "==", "upcoming")
+        )),
+      ]);
+      const booked = apptsSnap.docs.map((d) => ({
+        date: d.data().date as string,
+        time: d.data().time as string,
+        duration: d.data().duration as number | undefined,
+      }));
+      const dur = selectedService!.duration ?? 60;
+      const all = getAvailableSlots(selectedDate, avail, booked);
+      setSlots(all.filter((slot) => {
+        const [h, m] = slot.split(":").map(Number);
+        return h * 60 + m + dur <= avail.endHour * 60;
+      }));
+    }
+    loadSlots().catch(() => setSlots([])).finally(() => setSlotsLoading(false));
   }, [selectedDate, selectedService]);
 
   const payDetails = { cashapp: "$zzmell", zelle: "(929) 595-4095" };
@@ -398,34 +421,37 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
   async function handlePay() {
     if (!selectedService || !selectedDate || !selectedTime) return;
     setSubmitting(true);
-    const res = await fetch("/api/book", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientFirebaseUid: user.uid,
-        clientName: user.displayName ?? user.email?.split("@")[0] ?? "Client",
-        serviceId: selectedService.id,
-        serviceName: selectedService.name,
-        price: selectedService.price,
-        duration: selectedService.duration,
-        date: selectedDate,
-        time: selectedTime,
-        paymentMethod: "card",
-      }),
-    });
-    const { url } = await res.json();
-    if (url) window.location.href = url;
-    else setSubmitting(false);
+    try {
+      const res = await fetch("/api/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientFirebaseUid: user.uid,
+          clientName: user.displayName ?? user.email?.split("@")[0] ?? "Client",
+          serviceId: selectedService.id,
+          serviceName: selectedService.name,
+          price: selectedService.price,
+          duration: selectedService.duration,
+          date: selectedDate,
+          time: selectedTime,
+          paymentMethod: "card",
+        }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // card payments require Stripe to be configured
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleManualPay() {
     if (!selectedService || !selectedDate || !selectedTime) return;
     setSubmitting(true);
-    await fetch("/api/book", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientFirebaseUid: user.uid,
+    try {
+      await addDoc(collection(db, "appointments"), {
+        clientId: user.uid,
         clientName: user.displayName ?? user.email?.split("@")[0] ?? "Client",
         serviceId: selectedService.id,
         serviceName: selectedService.name,
@@ -433,11 +459,19 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
         duration: selectedService.duration,
         date: selectedDate,
         time: selectedTime,
-        paymentMethod: payMethod,
-      }),
-    });
-    setSubmitting(false);
-    setStep("pending");
+        depositPaid: false,
+        status: "upcoming",
+        notes: `📱 Self-booked · Payment: ${payMethod} (pending)`,
+        createdAt: new Date().toISOString(),
+        source: "public-booking",
+        depositMethod: payMethod,
+      });
+      setStep("pending");
+    } catch {
+      // keep on review step if write fails
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function copyHandle() {
