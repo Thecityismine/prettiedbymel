@@ -24,7 +24,10 @@ export default function SettingsPage() {
   const [newDayOff, setNewDayOff] = useState("");
 
   useEffect(() => {
-    loadAvailability().then((a) => { setAvail(a); setLoading(false); });
+    loadAvailability()
+      .then((a) => { setAvail(a); })
+      .catch(() => { /* use defaults on error */ })
+      .finally(() => setLoading(false));
   }, []);
 
   function toggleDay(day: number) {

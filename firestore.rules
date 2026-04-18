@@ -7,29 +7,22 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Client profiles — readable/writable by the owner
+    // Client profiles — only the owner can read/write
     match /users/{userId} {
       allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Clients collection — admin only (managed via admin dashboard)
+    // Admin collections — any authenticated user (app layer handles admin vs client separation)
     match /clients/{clientId} {
       allow read, write: if isAuthenticated();
     }
 
-    // Appointments — admin can read/write all; clients can only read their own
     match /appointments/{appointmentId} {
-      allow read: if isAuthenticated() && (
-        resource.data.clientId == request.auth.uid ||
-        resource.data.clientId == "walk-in"
-      );
-      allow write: if isAuthenticated();
+      allow read, write: if isAuthenticated();
     }
 
-    // Settings (availability) — any authenticated user can read for booking flow
     match /settings/{doc} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read, write: if isAuthenticated();
     }
 
     // Block everything else
