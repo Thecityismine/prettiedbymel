@@ -1,22 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import LoginForm from "./LoginForm";
 
 const PUBLIC_PATHS = ["/book"];
-
 const AUTH_KEY = "pbm_auth";
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Skip auth entirely for public client-facing paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return <>{children}</>;
   }
-  // Optimistic: if we've seen a logged-in session before, assume still logged in.
-  // onAuthStateChanged will correct to null within ~100ms if the session expired.
+
   const [user, setUser] = useState<User | null | undefined>(() => {
     if (typeof window === "undefined") return undefined;
     return localStorage.getItem(AUTH_KEY) === "1" ? ("optimistic" as unknown as User) : undefined;
@@ -24,11 +26,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
-      if (u) localStorage.setItem(AUTH_KEY, "1");
-      else localStorage.removeItem(AUTH_KEY);
+      if (u) {
+        localStorage.setItem(AUTH_KEY, "1");
+        // If admin email is configured and this user isn't the admin → send to client portal
+        if (ADMIN_EMAIL && u.email !== ADMIN_EMAIL) {
+          router.replace("/book");
+          return;
+        }
+      } else {
+        localStorage.removeItem(AUTH_KEY);
+      }
       setUser(u);
     });
-  }, []);
+  }, [router]);
 
   if (user === undefined) {
     return (

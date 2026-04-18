@@ -3,10 +3,10 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 import { getStripe, DEPOSIT_AMOUNT_CENTS } from "@/lib/stripe";
 
 export async function POST(request: Request) {
-  const { serviceId, serviceName, price, duration, date, time, clientName, phone } =
+  const { serviceId, serviceName, price, duration, date, time, clientName, phone, clientFirebaseUid } =
     await request.json();
 
-  if (!serviceId || !serviceName || !date || !time || !clientName || !phone) {
+  if (!serviceId || !serviceName || !date || !time || !clientName) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
   // Create appointment (depositPaid: false until Stripe webhook confirms)
   const ref = await db.collection("appointments").add({
-    clientId: "walk-in",
+    clientId: clientFirebaseUid ?? "walk-in",
     clientName,
     serviceId,
     serviceName,
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     time,
     depositPaid: false,
     status: "upcoming",
-    notes: `📱 Self-booked · Phone: ${phone}`,
+    notes: phone ? `📱 Self-booked · Phone: ${phone}` : "📱 Self-booked",
     createdAt: new Date().toISOString(),
     source: "public-booking",
   });
