@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Home, Users, CalendarDays, Sparkles, Bell } from "lucide-react";
 
 const navItems = [
-  { href: "/", icon: Home, label: "Home" },
+  { href: "/dashboard", icon: Home, label: "Home" },
   { href: "/clients", icon: Users, label: "Clients" },
   { href: "/appointments", icon: CalendarDays, label: "Book" },
   { href: "/pricing", icon: Sparkles, label: "Pricing" },
@@ -19,7 +19,7 @@ export default function BottomNav({ alertCount = 0 }: { alertCount?: number }) {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-card)] border-t border-[var(--color-border)]">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {navItems.map(({ href, icon: Icon, label }) => {
-          const active = pathname === href || pathname.startsWith(href + "/") && href !== "/";
+          const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
           const isAlerts = href === "/alerts";
           return (
             <Link

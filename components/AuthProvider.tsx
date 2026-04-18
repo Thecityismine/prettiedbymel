@@ -6,7 +6,8 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import LoginForm from "./LoginForm";
 
-const PUBLIC_PATHS = ["/book"];
+// Paths that don't require admin auth (client-facing)
+const PUBLIC_PATHS = ["/", "/book"];
 const AUTH_KEY = "pbm_auth";
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
@@ -14,8 +15,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const router = useRouter();
 
-  // Skip auth entirely for public client-facing paths
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return <>{children}</>;
   }
 
@@ -28,9 +28,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return onAuthStateChanged(auth, (u) => {
       if (u) {
         localStorage.setItem(AUTH_KEY, "1");
-        // If admin email is configured and this user isn't the admin → send to client portal
         if (ADMIN_EMAIL && u.email !== ADMIN_EMAIL) {
-          router.replace("/book");
+          router.replace("/");
           return;
         }
       } else {
@@ -48,9 +47,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   }
 
-  if (!user) {
-    return <LoginForm />;
-  }
+  if (!user) return <LoginForm />;
 
   return <>{children}</>;
 }

@@ -8,7 +8,7 @@ export default function BottomNavClient() {
   const pathname = usePathname();
   const [alertCount, setAlertCount] = useState(0);
 
-  if (pathname.startsWith("/book")) return null;
+  if (pathname === "/" || pathname.startsWith("/book")) return null;
 
   useEffect(() => {
     // Read alert count that the home/alerts page stores after computing
