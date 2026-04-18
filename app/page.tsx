@@ -12,6 +12,7 @@ import { ChevronLeft, Clock, ChevronRight, CalendarDays, LogOut, Plus, Lock } fr
 import { auth, db, authReady } from "@/lib/firebase";
 import { formatSlot, loadAvailability, getAvailableSlots } from "@/lib/availabilityDb";
 import { loadServices } from "@/lib/pricingDb";
+import { defaultServices } from "@/lib/defaultServices";
 import type { Service, Appointment } from "@/lib/types";
 
 type Screen = "auth" | "portal" | "booking";
@@ -281,11 +282,12 @@ function ClientPortal({
         if (!auth.currentUser) await authReady;
         const q = query(
           collection(db, "appointments"),
-          where("clientId", "==", user.uid),
-          orderBy("date", "desc")
+          where("clientId", "==", user.uid)
         );
         const snap = await getDocs(q);
-        setAppointments(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Appointment)));
+        const appts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Appointment));
+        appts.sort((a, b) => b.date.localeCompare(a.date));
+        setAppointments(appts);
       } catch {
         // show empty state
       } finally {
@@ -384,8 +386,13 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
 
   const today = new Date().toISOString().slice(0, 10);
 
+  const [servicesLoading, setServicesLoading] = useState(true);
+
   useEffect(() => {
-    loadServices().then(setServices).catch(() => setServices([]));
+    loadServices()
+      .then(setServices)
+      .catch(() => setServices(defaultServices))
+      .finally(() => setServicesLoading(false));
   }, []);
 
   useEffect(() => {
@@ -511,7 +518,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
         {step === "service" && (
           <>
             <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Choose a service</p>
-            {services.length === 0 ? (
+            {servicesLoading ? (
               <div className="flex justify-center py-12">
                 <div className="w-5 h-5 border-2 border-[var(--color-pink)] border-t-transparent rounded-full animate-spin" />
               </div>
