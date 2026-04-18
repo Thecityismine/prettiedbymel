@@ -10,7 +10,7 @@ import {
 import { collection, query, where, getDocs, orderBy, addDoc } from "firebase/firestore";
 import { ChevronLeft, Clock, ChevronRight, CalendarDays, LogOut, Plus, Lock } from "lucide-react";
 import { auth, db, authReady } from "@/lib/firebase";
-import { formatSlot, loadAvailability, getAvailableSlots } from "@/lib/availabilityDb";
+import { formatSlot, loadAvailability, getAvailableSlots, defaultAvailability } from "@/lib/availabilityDb";
 import { loadServices } from "@/lib/pricingDb";
 import { defaultServices } from "@/lib/defaultServices";
 import type { Service, Appointment } from "@/lib/types";
