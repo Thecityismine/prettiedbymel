@@ -7,12 +7,14 @@ import PageHeader from "@/components/PageHeader";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import { getClient, updateClient, deleteClient, weeksAgo } from "@/lib/clientsDb";
-import type { Client } from "@/lib/types";
+import { getAppointments, formatApptDate, formatApptTime } from "@/lib/appointmentsDb";
+import type { Client, Appointment } from "@/lib/types";
 
 export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [client, setClient] = useState<Client | null>(null);
+  const [apptHistory, setApptHistory] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [draft, setDraft] = useState<Partial<Client>>({});
@@ -20,12 +22,11 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    getClient(id)
-      .then((c) => {
-        setClient(c);
-        if (c) setDraft(c);
-      })
-      .finally(() => setLoading(false));
+    Promise.all([getClient(id), getAppointments()]).then(([c, all]) => {
+      setClient(c);
+      if (c) setDraft(c);
+      setApptHistory(all.filter((a) => a.clientId === id).sort((a, b) => b.date.localeCompare(a.date)));
+    }).finally(() => setLoading(false));
   }, [id]);
 
   async function handleSave() {
@@ -156,17 +157,58 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           )}
         </div>
 
+        {/* Stats row */}
+        {!editMode && (
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Visits", value: apptHistory.filter((a) => a.status === "done").length },
+              { label: "Total spent", value: `$${apptHistory.filter((a) => a.status === "done").reduce((s, a) => s + a.price, 0)}` },
+              { label: "No-shows", value: client.noShowCount ?? 0, warn: (client.noShowCount ?? 0) > 0 },
+            ].map(({ label, value, warn }) => (
+              <div key={label} className={`rounded-xl border p-3 text-center ${warn ? "bg-yellow-500/10 border-yellow-500/20" : "bg-[var(--color-card)] border-[var(--color-border)]"}`}>
+                <p className={`text-lg font-bold ${warn ? "text-yellow-400" : "text-white"}`}>{value}</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wide mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Quick actions */}
         {!editMode && (
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-3">
             <a href={`tel:${client.phone}`}>
               <Button variant="outline" fullWidth>
                 <Phone size={14} className="inline mr-1.5" />Call
               </Button>
             </a>
-            <Button fullWidth onClick={() => router.push(`/appointments?client=${id}`)}>
+            <Button fullWidth onClick={() => router.push(`/appointments/new?client=${id}`)}>
               <CalendarDays size={14} className="inline mr-1.5" />Book
             </Button>
+          </div>
+        )}
+
+        {/* Appointment history */}
+        {!editMode && apptHistory.length > 0 && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Appointment History</p>
+            <div className="space-y-2">
+              {apptHistory.map((a) => (
+                <div key={a.id} className="flex items-center gap-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{a.serviceName}</p>
+                    <p className="text-zinc-500 text-xs">{formatApptDate(a.date)} · {formatApptTime(a.time)}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[var(--color-pink)] font-bold text-sm">${a.price}</p>
+                    <p className={`text-[10px] uppercase tracking-wide ${
+                      a.status === "done" ? "text-emerald-400" :
+                      a.status === "no-show" ? "text-yellow-400" :
+                      a.status === "cancelled" ? "text-red-400" : "text-zinc-500"
+                    }`}>{a.status}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

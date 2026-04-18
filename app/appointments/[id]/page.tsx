@@ -12,6 +12,7 @@ import {
   updateAppointment,
   deleteAppointment,
   markDone,
+  markNoShow,
   formatApptDate,
   formatApptTime,
 } from "@/lib/appointmentsDb";
@@ -82,6 +83,12 @@ function AppointmentDetail({ params }: { params: Promise<{ id: string }> }) {
     setAppt({ ...appt, status: "done" });
   }
 
+  async function handleMarkNoShow() {
+    if (!appt) return;
+    await markNoShow(appt);
+    setAppt({ ...appt, status: "no-show", depositKept: appt.depositPaid });
+  }
+
   async function sendDepositLink() {
     if (!appt) return;
     setSendingDeposit(true);
@@ -134,7 +141,7 @@ function AppointmentDetail({ params }: { params: Promise<{ id: string }> }) {
     );
   }
 
-  const statusVariant = appt.status === "done" ? "done" : appt.status === "cancelled" ? "overdue" : "upcoming";
+  const statusVariant = appt.status === "done" ? "done" : appt.status === "cancelled" || appt.status === "no-show" ? "overdue" : "upcoming";
 
   return (
     <div className="min-h-screen max-w-lg mx-auto w-full">
@@ -261,9 +268,17 @@ function AppointmentDetail({ params }: { params: Promise<{ id: string }> }) {
             <Button fullWidth size="lg" onClick={handleMarkDone}>
               <CheckCircle size={16} className="inline mr-2" />Mark as Done
             </Button>
-            <Button variant="outline" fullWidth onClick={() => updateAppointment(id, { status: "cancelled" }).then(() => setAppt({ ...appt, status: "cancelled" }))}>
-              Cancel Appointment
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" fullWidth onClick={() => updateAppointment(id, { status: "cancelled" }).then(() => setAppt({ ...appt, status: "cancelled" }))}>
+                Cancel
+              </Button>
+              <button
+                onClick={handleMarkNoShow}
+                className="flex-1 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 transition-colors"
+              >
+                No-show {appt.depositPaid ? "· Keep $10" : ""}
+              </button>
+            </div>
           </div>
         )}
 

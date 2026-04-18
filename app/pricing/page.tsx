@@ -59,11 +59,19 @@ export default function PricingPage() {
     setDraft((prev) => prev.filter((s) => s.id !== id));
   }
 
+  function updateDuration(id: string, value: string) {
+    const num = parseInt(value);
+    setDraft((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, duration: isNaN(num) ? 0 : num } : s))
+    );
+  }
+
   function addService(category: Category) {
     const newService: Service = {
       id: `custom-${Date.now()}`,
       name: "New Service",
       price: 0,
+      duration: 60,
       category,
       emoji: "💅",
     };
@@ -148,6 +156,7 @@ export default function PricingPage() {
                     editMode={editMode}
                     onNameChange={(v) => updateName(service.id, v)}
                     onPriceChange={(v) => updatePrice(service.id, v)}
+                    onDurationChange={(v) => updateDuration(service.id, v)}
                     onRemove={() => removeService(service.id)}
                   />
                 ))}
@@ -173,42 +182,60 @@ function ServiceRow({
   editMode,
   onNameChange,
   onPriceChange,
+  onDurationChange,
   onRemove,
 }: {
   service: Service;
   editMode: boolean;
   onNameChange: (v: string) => void;
   onPriceChange: (v: string) => void;
+  onDurationChange: (v: string) => void;
   onRemove: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3">
-      <span className="text-xl w-7 shrink-0">{service.emoji}</span>
+    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3">
       {editMode ? (
-        <>
-          <input
-            className="flex-1 bg-transparent text-white text-sm font-medium outline-none border-b border-zinc-700 focus:border-[var(--color-pink)] pb-0.5 min-w-0"
-            value={service.name}
-            onChange={(e) => onNameChange(e.target.value)}
-          />
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="text-zinc-400 text-sm">$</span>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl w-7 shrink-0">{service.emoji}</span>
             <input
-              type="number"
-              className="w-14 bg-transparent text-[var(--color-pink)] font-bold text-right outline-none border-b border-zinc-700 focus:border-[var(--color-pink)] pb-0.5"
-              value={service.price}
-              onChange={(e) => onPriceChange(e.target.value)}
+              className="flex-1 bg-transparent text-white text-sm font-medium outline-none border-b border-zinc-700 focus:border-[var(--color-pink)] pb-0.5 min-w-0"
+              value={service.name}
+              onChange={(e) => onNameChange(e.target.value)}
             />
+            <button onClick={onRemove} className="text-zinc-600 hover:text-red-400 transition-colors shrink-0 ml-1">
+              <Trash2 size={15} />
+            </button>
           </div>
-          <button onClick={onRemove} className="text-zinc-600 hover:text-red-400 transition-colors shrink-0">
-            <Trash2 size={15} />
-          </button>
-        </>
+          <div className="flex gap-4 pl-9">
+            <div className="flex items-center gap-1">
+              <span className="text-zinc-500 text-xs">$</span>
+              <input
+                type="number"
+                className="w-14 bg-transparent text-[var(--color-pink)] font-bold text-sm outline-none border-b border-zinc-700 focus:border-[var(--color-pink)] pb-0.5"
+                value={service.price}
+                onChange={(e) => onPriceChange(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-zinc-500 text-xs">⏱</span>
+              <input
+                type="number"
+                className="w-12 bg-transparent text-zinc-300 text-sm outline-none border-b border-zinc-700 focus:border-[var(--color-pink)] pb-0.5"
+                value={service.duration ?? 60}
+                onChange={(e) => onDurationChange(e.target.value)}
+              />
+              <span className="text-zinc-500 text-xs">min</span>
+            </div>
+          </div>
+        </div>
       ) : (
-        <>
+        <div className="flex items-center gap-3">
+          <span className="text-xl w-7 shrink-0">{service.emoji}</span>
           <span className="flex-1 text-white text-sm font-medium">{service.name}</span>
-          <span className="text-[var(--color-pink)] font-bold text-sm shrink-0">${service.price}</span>
-        </>
+          <span className="text-zinc-500 text-xs">{service.duration ?? 60}m</span>
+          <span className="text-[var(--color-pink)] font-bold text-sm">${service.price}</span>
+        </div>
       )}
     </div>
   );

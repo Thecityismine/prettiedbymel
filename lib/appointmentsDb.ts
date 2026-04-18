@@ -8,6 +8,7 @@ import {
   deleteDoc,
   orderBy,
   query,
+  increment,
 } from "firebase/firestore";
 import { db, authReady } from "./firebase";
 import { updateClient } from "./clientsDb";
@@ -44,12 +45,23 @@ export async function deleteAppointment(id: string): Promise<void> {
   await deleteDoc(doc(db, "appointments", id));
 }
 
-// Mark done and sync last visit back to the client record
 export async function markDone(appt: Appointment): Promise<void> {
   await updateAppointment(appt.id, { status: "done" });
   await updateClient(appt.clientId, {
     lastVisit: appt.date,
     lastService: appt.serviceName,
+    totalSpent: (appt.price ?? 0), // accumulated by caller if needed
+  });
+}
+
+export async function markNoShow(appt: Appointment): Promise<void> {
+  await authReady;
+  await updateDoc(doc(db, "appointments", appt.id), {
+    status: "no-show",
+    depositKept: appt.depositPaid,
+  });
+  await updateDoc(doc(db, "clients", appt.clientId), {
+    noShowCount: increment(1),
   });
 }
 

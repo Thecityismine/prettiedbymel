@@ -25,8 +25,10 @@ export default function PaymentsPage() {
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const upcoming = appointments.filter((a) => a.status === "upcoming" && a.date >= todayStr);
-  const paid = appointments.filter((a) => a.depositPaid);
+  const paid = appointments.filter((a) => a.depositPaid && a.status !== "no-show");
   const unpaid = upcoming.filter((a) => !a.depositPaid);
+  const noShows = appointments.filter((a) => a.status === "no-show");
+  const depositsKept = noShows.filter((a) => a.depositKept);
 
   const totalDeposits = paid.length * 10;
   const totalServiceValue = appointments
@@ -97,11 +99,27 @@ export default function PaymentsPage() {
             value={String(unpaid.length)}
             warn={unpaid.length > 0}
           />
+          {depositsKept.length > 0 && (
+            <StatCard
+              icon={<span className="text-lg">👻</span>}
+              label="No-show deposits kept"
+              value={`$${depositsKept.length * 10}`}
+            />
+          )}
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-6 h-6 border-2 border-[var(--color-pink)] border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded-2xl p-4 animate-pulse">
+                <div className="w-9 h-9 rounded-full bg-zinc-800 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 bg-zinc-800 rounded-full w-1/3" />
+                  <div className="h-2.5 bg-zinc-800 rounded-full w-1/2" />
+                </div>
+                <div className="h-4 bg-zinc-800 rounded-full w-10" />
+              </div>
+            ))}
           </div>
         ) : (
           <>
@@ -158,6 +176,32 @@ export default function PaymentsPage() {
                         <div className="text-right shrink-0">
                           <p className="text-emerald-400 font-bold text-sm">+$10</p>
                           <p className="text-zinc-600 text-xs">${appt.price} total</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* No-show deposits kept */}
+            {depositsKept.length > 0 && (
+              <section>
+                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
+                  No-show · Deposit Kept ({depositsKept.length})
+                </p>
+                <div className="space-y-2">
+                  {depositsKept.map((appt) => (
+                    <Link key={appt.id} href={`/appointments/${appt.id}`}>
+                      <div className="flex items-center gap-3 bg-[var(--color-card)] border border-yellow-500/20 rounded-2xl px-4 py-3 transition-all duration-200">
+                        <div className="w-9 h-9 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0 text-sm">👻</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-semibold truncate">{appt.clientName}</p>
+                          <p className="text-zinc-500 text-xs truncate">{appt.serviceName} · {formatApptDate(appt.date)}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-yellow-400 font-bold text-sm">+$10</p>
+                          <p className="text-zinc-600 text-xs">kept</p>
                         </div>
                       </div>
                     </Link>
