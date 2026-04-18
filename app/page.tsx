@@ -92,7 +92,7 @@ function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
       if (mode === "signup") {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const displayName = name.trim() || email.split("@")[0];
-        if (name.trim()) await updateProfile(cred.user, { displayName });
+        await updateProfile(cred.user, { displayName });
         await restPost("clients", {
           name: displayName,
           email,
@@ -287,15 +287,21 @@ function ClientPortal({
 }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientName, setClientName] = useState(user.displayName ?? "");
 
   useEffect(() => {
     async function load() {
       try {
-        const all = await restList("appointments");
-        const appts = (all as unknown as Appointment[])
+        const [allAppts, allClients] = await Promise.all([
+          restList("appointments"),
+          restList("clients"),
+        ]);
+        const appts = (allAppts as unknown as Appointment[])
           .filter((a) => a.clientId === user.uid)
           .sort((a, b) => b.date.localeCompare(a.date));
         setAppointments(appts);
+        const record = allClients.find((c) => c.firebaseUid === user.uid);
+        if (record?.name) setClientName(record.name as string);
       } catch {
         // show empty state
       } finally {
@@ -308,7 +314,7 @@ function ClientPortal({
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = appointments.filter((a) => a.date >= today && a.status === "upcoming");
   const past = appointments.filter((a) => a.date < today || a.status !== "upcoming");
-  const firstName = (user.displayName ?? user.email ?? "there").split(/[ @]/)[0];
+  const firstName = (clientName || user.displayName || user.email || "there").split(/[ @]/)[0];
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] max-w-lg mx-auto w-full flex flex-col">
