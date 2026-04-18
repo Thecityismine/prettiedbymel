@@ -278,14 +278,14 @@ function AppointmentDetail({ params }: { params: Promise<{ id: string }> }) {
               <CheckCircle size={16} className="inline mr-2" />Mark as Done
             </Button>
             <div className="flex gap-2">
-              <Button variant="outline" fullWidth onClick={() => updateAppointment(id, { status: "cancelled" }).then(() => setAppt({ ...appt, status: "cancelled" }))}>
+              <Button variant="outline" className="flex-1" onClick={() => updateAppointment(id, { status: "cancelled" }).then(() => setAppt({ ...appt, status: "cancelled" }))}>
                 Cancel
               </Button>
               <button
                 onClick={handleMarkNoShow}
-                className="flex-1 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 transition-colors"
+                className="flex-[2] py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 transition-colors"
               >
-                No-show {appt.depositPaid ? "· Keep $10" : ""}
+                No-show{appt.depositPaid ? " · Keep $10" : ""}
               </button>
             </div>
           </div>
