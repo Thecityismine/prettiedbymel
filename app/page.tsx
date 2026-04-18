@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, CalendarDays, Sparkles, CreditCard, Bell } from "lucide-react";
+import { Users, CalendarDays, Sparkles, CreditCard, Bell, LogOut } from "lucide-react";
 import Card from "@/components/Card";
 import { getClients } from "@/lib/clientsDb";
 import { getAppointments } from "@/lib/appointmentsDb";
 import { computeAlerts } from "@/lib/alerts";
+import { signOut } from "@/lib/auth";
 
 const navCards = [
   { href: "/clients",      icon: Users,        label: "Clients",      sub: "Manage your client book" },
@@ -46,14 +47,23 @@ export default function Home() {
             prettiedbymel
           </p>
         </div>
-        <Link href="/alerts" className="relative text-zinc-500 hover:text-white transition-colors p-1">
-          <Bell size={24} />
-          {alertCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-[var(--color-pink)] rounded-full flex items-center justify-center text-[9px] font-bold text-white px-0.5 glow-pink">
-              {alertCount > 9 ? "9+" : alertCount}
-            </span>
-          )}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/alerts" className="relative text-zinc-500 hover:text-white transition-colors p-1">
+            <Bell size={24} />
+            {alertCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-[var(--color-pink)] rounded-full flex items-center justify-center text-[9px] font-bold text-white px-0.5 glow-pink">
+                {alertCount > 9 ? "9+" : alertCount}
+              </span>
+            )}
+          </Link>
+          <button
+            onClick={() => signOut()}
+            className="text-zinc-600 hover:text-zinc-300 transition-colors p-1"
+            title="Sign out"
+          >
+            <LogOut size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Welcome strip */}

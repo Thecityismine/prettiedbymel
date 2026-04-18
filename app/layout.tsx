@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { Playfair_Display, Dancing_Script } from "next/font/google";
 import BottomNavClient from "@/components/BottomNavClient";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+import AuthProvider from "@/components/AuthProvider";
 import "./globals.css";
 
 const geist = Geist({
@@ -50,10 +51,12 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable} ${playfair.variable} ${dancing.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)] select-none">
         <ServiceWorkerRegistrar />
-        <div className="flex-1 pb-16">
-          {children}
-        </div>
-        <BottomNavClient />
+        <AuthProvider>
+          <div className="flex-1 pb-16">
+            {children}
+          </div>
+          <BottomNavClient />
+        </AuthProvider>
       </body>
     </html>
   );
