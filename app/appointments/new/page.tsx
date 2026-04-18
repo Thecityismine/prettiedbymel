@@ -130,8 +130,8 @@ function NewAppointmentForm() {
         </Field>
 
         {/* Step 2 — Date + Time */}
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="2. Date">
+        <Field label="2. Date & Time">
+          <div className="flex flex-col gap-2">
             <input
               className={baseCls}
               type="date"
@@ -139,8 +139,6 @@ function NewAppointmentForm() {
               onChange={(e) => set("date", e.target.value)}
               required
             />
-          </Field>
-          <Field label="Time">
             <input
               className={baseCls}
               type="time"
@@ -148,8 +146,8 @@ function NewAppointmentForm() {
               onChange={(e) => set("time", e.target.value)}
               required
             />
-          </Field>
-        </div>
+          </div>
+        </Field>
 
         {/* Step 3 — Client */}
         <Field label="3. Client">
