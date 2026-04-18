@@ -11,6 +11,7 @@ import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { ChevronLeft, Clock, ChevronRight, CalendarDays, LogOut, Plus, Lock } from "lucide-react";
 import { auth, db, authReady } from "@/lib/firebase";
 import { formatSlot } from "@/lib/availabilityDb";
+import { loadServices } from "@/lib/pricingDb";
 import type { Service, Appointment } from "@/lib/types";
 
 type Screen = "auth" | "portal" | "booking";
@@ -379,7 +380,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
   const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
-    fetch("/api/book/services").then((r) => r.json()).then((d) => setServices(d.services ?? []));
+    loadServices().then(setServices).catch(() => setServices([]));
   }, []);
 
   useEffect(() => {

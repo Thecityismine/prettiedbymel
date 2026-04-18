@@ -27,7 +27,7 @@ export default function BottomNavClient() {
     return () => window.removeEventListener("pbm_alerts_updated", handler);
   }, []);
 
-  if (!loggedIn || pathname.startsWith("/book")) return null;
+  if (!loggedIn || pathname === "/" || pathname.startsWith("/book")) return null;
 
   return <BottomNav alertCount={alertCount} />;
 }
