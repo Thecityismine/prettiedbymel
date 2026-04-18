@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, CalendarDays, Sparkles, CreditCard, Bell, LogOut } from "lucide-react";
+import { Users, CalendarDays, Sparkles, CreditCard, Bell, LogOut, Settings } from "lucide-react";
 import Card from "@/components/Card";
 import { getClients } from "@/lib/clientsDb";
 import { getAppointments } from "@/lib/appointmentsDb";
@@ -14,6 +14,7 @@ const navCards = [
   { href: "/appointments", icon: CalendarDays,  label: "Appointments", sub: "View & schedule bookings" },
   { href: "/pricing",      icon: Sparkles,      label: "Pricing",      sub: "Your service menu" },
   { href: "/payments",     icon: CreditCard,    label: "Payments",     sub: "Deposits & invoices" },
+  { href: "/settings",     icon: Settings,      label: "Availability", sub: "Hours, days off & booking link" },
 ];
 
 export default function Home() {

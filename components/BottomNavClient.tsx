@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import BottomNav from "./BottomNav";
 
 export default function BottomNavClient() {
+  const pathname = usePathname();
   const [alertCount, setAlertCount] = useState(0);
+
+  if (pathname.startsWith("/book")) return null;
 
   useEffect(() => {
     // Read alert count that the home/alerts page stores after computing

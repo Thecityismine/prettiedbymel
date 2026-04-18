@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import LoginForm from "./LoginForm";
 
+const PUBLIC_PATHS = ["/book"];
+
 const AUTH_KEY = "pbm_auth";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+    return <>{children}</>;
+  }
   // Optimistic: if we've seen a logged-in session before, assume still logged in.
   // onAuthStateChanged will correct to null within ~100ms if the session expired.
   const [user, setUser] = useState<User | null | undefined>(() => {
