@@ -1,7 +1,5 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, auth, authReady } from "./firebase";
-import { restPatch } from "./firestoreRest";
-import { cacheGet, cacheSet, cacheInvalidate } from "./cache";
+import { restGet, restPatch } from "./firestoreRest";
+import { cacheGet, cacheSet } from "./cache";
 
 export interface Availability {
   workDays: number[];   // 0=Sun … 6=Sat
@@ -19,27 +17,26 @@ export const defaultAvailability: Availability = {
   daysOff: [],
 };
 
-const AVAIL_DOC = doc(db, "settings", "availability");
 const KEY = "availability";
 
 export async function loadAvailability(): Promise<Availability> {
   const hit = cacheGet<Availability>(KEY);
   if (hit) {
     if (hit.stale) {
-      (async () => {
-        if (!auth.currentUser) await authReady;
-        const snap = await getDoc(AVAIL_DOC);
-        if (snap.exists()) cacheSet(KEY, snap.data() as Availability);
-      })().catch(() => {});
+      restGet("settings", "availability")
+        .then((d) => { if (d) cacheSet(KEY, d as unknown as Availability); })
+        .catch(() => {});
     }
     return hit.data;
   }
-  if (!auth.currentUser) await authReady;
-  const snap = await getDoc(AVAIL_DOC);
-  const data = snap.exists() ? (snap.data() as Availability) : defaultAvailability;
-  if (!snap.exists()) await setDoc(AVAIL_DOC, defaultAvailability);
-  cacheSet(KEY, data);
-  return data;
+  const data = await restGet("settings", "availability");
+  const avail = data ? (data as unknown as Availability) : defaultAvailability;
+  if (!data) {
+    // First run — seed the document
+    await restPatch("settings", "availability", defaultAvailability as unknown as Record<string, unknown>);
+  }
+  cacheSet(KEY, avail);
+  return avail;
 }
 
 export async function saveAvailability(a: Availability): Promise<void> {
