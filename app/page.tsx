@@ -129,7 +129,7 @@ function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
       {/* Subtle admin toggle */}
       <button
         onClick={() => { setAdminMode(!adminMode); setAdminError(""); }}
-        className="absolute top-6 right-6 text-zinc-800 hover:text-zinc-500 transition-colors"
+        className="absolute top-6 right-6 text-[var(--color-pink)] opacity-40 hover:opacity-100 transition-opacity drop-shadow-[0_0_6px_var(--color-pink-glow)]"
         aria-label="Business login"
       >
         <Lock size={14} />
