@@ -400,19 +400,30 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
     setSlotsLoading(true);
     setSelectedTime("");
     async function loadSlots() {
-      const [avail, apptsSnap] = await Promise.all([
-        loadAvailability(),
+      function withFallback<T>(p: Promise<T>, fallback: T): Promise<T> {
+        const timer = new Promise<T>((resolve) => setTimeout(() => resolve(fallback), 6000));
+        return Promise.race([p.catch(() => fallback), timer]);
+      }
+
+      const avail = await withFallback(loadAvailability(), defaultAvailability);
+
+      const apptsSnap = await withFallback(
         getDocs(query(
           collection(db, "appointments"),
           where("date", "==", selectedDate),
           where("status", "==", "upcoming")
         )),
-      ]);
-      const booked = apptsSnap.docs.map((d) => ({
-        date: d.data().date as string,
-        time: d.data().time as string,
-        duration: d.data().duration as number | undefined,
-      }));
+        null
+      );
+
+      const booked = apptsSnap
+        ? apptsSnap.docs.map((d) => ({
+            date: d.data().date as string,
+            time: d.data().time as string,
+            duration: d.data().duration as number | undefined,
+          }))
+        : [];
+
       const dur = selectedService!.duration ?? 60;
       const all = getAvailableSlots(selectedDate, avail, booked);
       setSlots(all.filter((slot) => {
@@ -420,7 +431,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
         return h * 60 + m + dur <= avail.endHour * 60;
       }));
     }
-    loadSlots().catch(() => setSlots([])).finally(() => setSlotsLoading(false));
+    loadSlots().finally(() => setSlotsLoading(false));
   }, [selectedDate, selectedService]);
 
   const payDetails = { cashapp: "$zzmell", zelle: "(929) 595-4095" };
@@ -514,7 +525,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
         </div>
       </div>
 
-      <div className="flex-1 px-5 py-5 space-y-4 overflow-y-auto pb-10">
+      <div className="flex-1 px-5 py-5 space-y-4 overflow-y-auto overflow-x-hidden pb-10">
         {step === "service" && (
           <>
             <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Choose a service</p>
