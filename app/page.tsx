@@ -76,6 +76,7 @@ function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [adminMode, setAdminMode] = useState(false);
@@ -96,7 +97,7 @@ function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
         await restPost("clients", {
           name: displayName,
           email,
-          phone: "",
+          phone: phone.trim(),
           firebaseUid: cred.user.uid,
           totalSpent: 0,
           noShowCount: 0,
@@ -229,14 +230,25 @@ function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
             </div>
 
             {mode === "signup" && (
-              <input
-                className={inputCls}
-                placeholder="Your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-                required
-              />
+              <>
+                <input
+                  className={inputCls}
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  required
+                />
+                <input
+                  className={inputCls}
+                  type="tel"
+                  placeholder="Phone number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
+                  required
+                />
+              </>
             )}
             <input
               className={inputCls}
