@@ -33,7 +33,8 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const appointmentId = session.metadata?.appointmentId;
+    // Support both static payment links (client_reference_id) and dynamic sessions (metadata)
+    const appointmentId = (session.client_reference_id as string | null) ?? session.metadata?.appointmentId;
 
     if (appointmentId) {
       const db = getAdminDb();

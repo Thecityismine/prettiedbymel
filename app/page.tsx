@@ -478,6 +478,8 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
 
   async function handlePay() {
     if (!selectedService || !selectedDate || !selectedTime) return;
+    const depositLink = process.env.NEXT_PUBLIC_STRIPE_DEPOSIT_LINK;
+    if (!depositLink) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/book", {
@@ -495,11 +497,11 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
           paymentMethod: "card",
         }),
       });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      const { appointmentId } = await res.json();
+      if (appointmentId) {
+        window.location.href = `${depositLink}?client_reference_id=${appointmentId}`;
+      }
     } catch {
-      // card payments require Stripe to be configured
-    } finally {
       setSubmitting(false);
     }
   }

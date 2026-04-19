@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { getStripe, DEPOSIT_AMOUNT_CENTS } from "@/lib/stripe";
 
 export async function POST(request: Request) {
   const { serviceId, serviceName, price, duration, date, time, clientName, phone, clientFirebaseUid, paymentMethod } =
@@ -34,35 +33,6 @@ export async function POST(request: Request) {
 
   const ref = await db.collection("appointments").add(appointmentData);
 
-  // CashApp / Zelle — no Stripe, return success immediately
-  if (method === "cashapp" || method === "zelle") {
-    return NextResponse.json({ success: true, appointmentId: ref.id });
-  }
-
-  // Card — create Stripe checkout session
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-
-  const session = await getStripe().checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          unit_amount: DEPOSIT_AMOUNT_CENTS,
-          product_data: {
-            name: "Appointment Deposit – Prettied by Mel",
-            description: `${serviceName} · ${date} at ${time}`,
-          },
-        },
-        quantity: 1,
-      },
-    ],
-    metadata: { appointmentId: ref.id },
-    success_url: `${baseUrl}/book/success`,
-    cancel_url: `${baseUrl}/`,
-    customer_email: undefined,
-    phone_number_collection: { enabled: false },
-  });
-
-  return NextResponse.json({ url: session.url });
+  // Return appointment ID — client redirects to static Stripe payment link
+  return NextResponse.json({ appointmentId: ref.id });
 }
