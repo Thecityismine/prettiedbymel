@@ -546,31 +546,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
         </div>
       </div>
 
-      {/* Live summary bar */}
-      {step !== "service" && step !== "pending" && (
-        <div className="px-5 py-2.5 border-b border-[var(--color-border)] bg-[var(--color-card)]/50">
-          <div className="flex items-center gap-2 text-xs flex-wrap">
-            {selectedService && (
-              <span className="text-white font-semibold">{selectedService.name}</span>
-            )}
-            {selectedService && selectedDate && <span className="text-zinc-600">·</span>}
-            {selectedDate && (
-              <span className="text-zinc-400">
-                {new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              </span>
-            )}
-            {selectedDate && selectedTime && <span className="text-zinc-600">·</span>}
-            {selectedTime && (
-              <span className="text-zinc-400">{formatSlot(selectedTime)}</span>
-            )}
-            {selectedService && (
-              <span className="ml-auto text-[var(--color-pink)] font-bold">${selectedService.price}</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="flex-1 px-5 py-5 space-y-4 overflow-y-auto overflow-x-hidden pb-10">
+<div className="flex-1 px-5 py-5 space-y-4 overflow-y-auto overflow-x-hidden pb-10">
         {step === "service" && (
           <>
             <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Choose a service</p>
