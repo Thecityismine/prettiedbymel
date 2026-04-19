@@ -352,8 +352,8 @@ function ClientPortal({
             <Plus size={20} className="text-white" />
           </div>
           <div className="text-left">
-            <p className="text-white font-semibold text-sm">Book New Appointment</p>
-            <p className="text-zinc-500 text-xs mt-0.5">$10 deposit · locks in your slot</p>
+            <p className="text-white font-semibold text-sm">Book Appointment</p>
+            <p className="text-zinc-500 text-xs mt-0.5">Secure with a $10 reservation</p>
           </div>
         </button>
 
@@ -368,10 +368,13 @@ function ClientPortal({
               ))}
             </div>
           ) : upcoming.length === 0 ? (
-            <div className="text-center py-8 bg-[var(--color-card)] border border-[var(--color-border)] rounded-2xl">
-              <p className="text-3xl mb-2">📅</p>
-              <p className="text-zinc-500 text-sm">No upcoming appointments</p>
-              <button onClick={onBook} className="text-[var(--color-pink)] text-xs mt-2 hover:underline">Book now →</button>
+            <div className="text-center py-10 bg-[var(--color-card)] border border-[var(--color-border)] rounded-2xl">
+              <p className="text-4xl mb-3">💅</p>
+              <p className="text-white font-semibold text-sm">No bookings yet</p>
+              <p className="text-zinc-500 text-xs mt-1 mb-4">Tap below to book your first appointment</p>
+              <button onClick={onBook} className="px-5 py-2.5 bg-[var(--color-pink)] text-white text-sm font-semibold rounded-xl shadow-[0_0_12px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors">
+                Book now →
+              </button>
             </div>
           ) : (
             <div className="space-y-2">
@@ -535,13 +538,37 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
             <p className="font-dancing text-lg text-[var(--color-pink)] text-glow-pink leading-tight">prettiedbymel</p>
           </div>
         </div>
-        <p className="text-zinc-400 text-sm">$10 deposit to confirm your appointment</p>
+        <p className="text-zinc-400 text-sm">Secure your spot with a $10 reservation</p>
         <div className="flex gap-1.5 mt-3">
           {[0, 1, 2].map((i) => (
             <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${stepIndex >= i ? "bg-[var(--color-pink)]" : "bg-zinc-800"}`} />
           ))}
         </div>
       </div>
+
+      {/* Live summary bar */}
+      {step !== "service" && step !== "pending" && (
+        <div className="px-5 py-2.5 border-b border-[var(--color-border)] bg-[var(--color-card)]/50">
+          <div className="flex items-center gap-2 text-xs flex-wrap">
+            {selectedService && (
+              <span className="text-white font-semibold">{selectedService.name}</span>
+            )}
+            {selectedService && selectedDate && <span className="text-zinc-600">·</span>}
+            {selectedDate && (
+              <span className="text-zinc-400">
+                {new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
+            {selectedDate && selectedTime && <span className="text-zinc-600">·</span>}
+            {selectedTime && (
+              <span className="text-zinc-400">{formatSlot(selectedTime)}</span>
+            )}
+            {selectedService && (
+              <span className="ml-auto text-[var(--color-pink)] font-bold">${selectedService.price}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 px-5 py-5 space-y-4 overflow-y-auto overflow-x-hidden pb-10">
         {step === "service" && (
@@ -637,90 +664,90 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
 
         {step === "review" && selectedService && (
           <>
-            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Review your booking</p>
+            {/* Booking summary card */}
             <div className="bg-gradient-to-b from-[var(--color-pink)]/15 to-[var(--color-card)] border border-[var(--color-pink)]/20 rounded-2xl p-5 space-y-3">
-              <Row label="Service" value={selectedService.name} />
-              <Row label="Date" value={new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} />
+              <div className="mb-1">
+                <p className="text-[var(--color-pink)] text-xl font-black">{selectedService.name}</p>
+                <p className="text-zinc-500 text-xs mt-0.5">{selectedService.duration} min session</p>
+              </div>
+              <Row label="Date" value={new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })} />
               <Row label="Time" value={formatSlot(selectedTime)} />
-              <Row label="Duration" value={`${selectedService.duration} min`} />
               <Row label="Name" value={user.displayName ?? user.email ?? ""} />
               <div className="h-px bg-[var(--color-border)]" />
-              <div className="flex justify-between">
-                <span className="text-zinc-400 text-sm">Service price</span>
-                <span className="text-white font-semibold text-sm">${selectedService.price}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400 text-sm">Service total</span>
+                <span className="text-white font-semibold">${selectedService.price}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--color-pink)] font-semibold text-sm">Deposit due now</span>
-                <span className="text-[var(--color-pink)] font-black text-lg">$10</span>
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="text-[var(--color-pink)] font-semibold text-sm">Reservation fee</span>
+                  <p className="text-zinc-600 text-xs">Applied toward your total</p>
+                </div>
+                <span className="text-[var(--color-pink)] font-black text-2xl">$10</span>
               </div>
             </div>
 
-            {/* Payment method */}
-            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Pay $10 deposit via</p>
-            <div className="flex flex-col gap-2">
-              {(["card", "cashapp", "zelle"] as PayMethod[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setPayMethod(m)}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all ${
-                    payMethod === m
-                      ? "bg-[var(--color-pink)]/10 border-[var(--color-pink)] text-white"
-                      : "bg-[var(--color-card)] border-[var(--color-border)] text-zinc-400"
-                  }`}
-                >
-                  <span className="text-lg">{m === "card" ? "💳" : m === "cashapp" ? "💚" : "💜"}</span>
-                  <div>
-                    <p className="text-sm font-semibold leading-none">
-                      {m === "card" ? "Credit / Debit Card" : m === "cashapp" ? "Cash App" : "Zelle"}
-                    </p>
-                    {m !== "card" && (
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        {payDetails[m]}
-                      </p>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
+            <p className="text-zinc-600 text-xs text-center">
+              ✦ Appointments are limited — your spot is reserved after payment
+            </p>
 
-            {/* Card pay */}
-            {payMethod === "card" && (
+            {/* Card — primary */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Pay securely</p>
               <button
                 onClick={handlePay}
                 disabled={submitting}
-                className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60"
+                className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60 active:scale-[0.98]"
               >
                 {submitting ? "Redirecting…" : "Pay $10 by Card →"}
               </button>
-            )}
+              <p className="text-zinc-600 text-xs text-center flex items-center justify-center gap-1">
+                <Lock size={10} /> Secure checkout · Powered by Stripe
+              </p>
+            </div>
 
-            {/* CashApp / Zelle pay */}
-            {(payMethod === "cashapp" || payMethod === "zelle") && (
-              <div className="space-y-3">
-                <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs text-zinc-500 mb-0.5">{payMethod === "cashapp" ? "Cash App" : "Zelle"} handle</p>
-                    <p className="text-white font-bold">{payDetails[payMethod]}</p>
-                  </div>
+            {/* CashApp / Zelle — secondary */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Other options</p>
+              <div className="flex gap-2">
+                {(["cashapp", "zelle"] as PayMethod[]).map((m) => (
                   <button
-                    onClick={copyHandle}
-                    className="text-xs text-[var(--color-pink)] font-semibold shrink-0 hover:opacity-70 transition-opacity"
+                    key={m}
+                    onClick={() => setPayMethod(payMethod === m ? "card" : m)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all active:scale-[0.97] ${
+                      payMethod === m
+                        ? "bg-[var(--color-pink)]/10 border-[var(--color-pink)] text-white"
+                        : "bg-[var(--color-card)] border-[var(--color-border)] text-zinc-400"
+                    }`}
                   >
-                    {copied ? "Copied!" : "Copy"}
+                    <span>{m === "cashapp" ? "💚" : "💜"}</span>
+                    {m === "cashapp" ? "Cash App" : "Zelle"}
+                  </button>
+                ))}
+              </div>
+
+              {(payMethod === "cashapp" || payMethod === "zelle") && (
+                <div className="space-y-3 pt-1">
+                  <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-0.5">{payMethod === "cashapp" ? "Cash App" : "Zelle"}</p>
+                      <p className="text-white font-bold">{payDetails[payMethod]}</p>
+                    </div>
+                    <button onClick={copyHandle} className="text-xs text-[var(--color-pink)] font-semibold shrink-0 hover:opacity-70 transition-opacity">
+                      {copied ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                  <p className="text-zinc-500 text-xs text-center px-2">Send exactly $10 and include your name in the note.</p>
+                  <button
+                    onClick={handleManualPay}
+                    disabled={submitting}
+                    className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60 active:scale-[0.98]"
+                  >
+                    {submitting ? "Confirming…" : "I've Sent the $10 ✓"}
                   </button>
                 </div>
-                <p className="text-zinc-500 text-xs text-center px-2">
-                  Send exactly $10 and include your name in the note.
-                </p>
-                <button
-                  onClick={handleManualPay}
-                  disabled={submitting}
-                  className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60"
-                >
-                  {submitting ? "Confirming…" : "I've Sent the $10 ✓"}
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </>
         )}
 
@@ -730,7 +757,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
             <p className="text-6xl">💅</p>
             <h2 className="font-playfair text-3xl font-black text-white tracking-widest uppercase">You&apos;re Almost In!</h2>
             <p className="text-zinc-300 text-base max-w-xs leading-relaxed">
-              Once your $10 {payMethod === "cashapp" ? "Cash App" : "Zelle"} payment is received, your appointment will be confirmed.
+              Your spot is being held. Once we receive your {payMethod === "cashapp" ? "Cash App" : "Zelle"} payment, your appointment is confirmed instantly.
             </p>
             <p className="text-zinc-400 text-sm">
               Questions? DM <span className="text-[var(--color-pink)]">@prettiedbymel</span> on Instagram.
