@@ -335,6 +335,14 @@ function ClientPortal({
           <div>
             <h1 className="font-playfair text-2xl font-black text-white tracking-widest uppercase">NAILS</h1>
             <p className="font-dancing text-lg text-[var(--color-pink)] text-glow-pink leading-tight">prettiedbymel</p>
+            <div className="flex gap-3 mt-1.5">
+              <a href="https://instagram.com/prettiedbymel" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-[var(--color-pink)] transition-colors" aria-label="Instagram">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+              </a>
+              <a href="https://tiktok.com/@prettiedbymel" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-[var(--color-pink)] transition-colors" aria-label="TikTok">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.79 1.54V6.75a4.85 4.85 0 0 1-1.02-.06Z"/></svg>
+              </a>
+            </div>
           </div>
           <button onClick={onSignOut} className="text-zinc-600 hover:text-zinc-300 transition-colors p-1">
             <LogOut size={18} />
@@ -353,7 +361,7 @@ function ClientPortal({
           </div>
           <div className="text-left">
             <p className="text-white font-semibold text-sm">Book Appointment</p>
-            <p className="text-zinc-500 text-xs mt-0.5">Secure with a $10 reservation</p>
+            <p className="text-zinc-500 text-xs mt-0.5">Reserve your spot in seconds</p>
           </div>
         </button>
 
@@ -664,7 +672,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
             </div>
 
             <p className="text-zinc-600 text-xs text-center">
-              ✦ Appointments are limited — your spot is reserved after payment
+              ✦ Due to high demand, appointments require a reservation · Your spot is held after payment
             </p>
 
             {/* Card — primary */}
@@ -675,16 +683,17 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
                 disabled={submitting}
                 className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60 active:scale-[0.98]"
               >
-                {submitting ? "Redirecting…" : "Pay $10 by Card →"}
+                {submitting ? "Redirecting…" : "Secure My Appointment · $10"}
               </button>
               <p className="text-zinc-600 text-xs text-center flex items-center justify-center gap-1">
                 <Lock size={10} /> Secure checkout · Powered by Stripe
               </p>
+              <p className="text-zinc-700 text-xs text-center">Instant confirmation after payment</p>
             </div>
 
             {/* CashApp / Zelle — secondary */}
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Other options</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Other ways to pay (manual confirmation)</p>
               <div className="flex gap-2">
                 {(["cashapp", "zelle"] as PayMethod[]).map((m) => (
                   <button
@@ -719,8 +728,9 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
                     disabled={submitting}
                     className="w-full py-4 bg-[var(--color-pink)] text-white font-bold rounded-xl shadow-[0_0_20px_var(--color-pink-glow)] hover:bg-[var(--color-pink-dark)] transition-colors disabled:opacity-60 active:scale-[0.98]"
                   >
-                    {submitting ? "Confirming…" : "I've Sent the $10 ✓"}
+                    {submitting ? "Confirming…" : "I've Sent Payment ✓"}
                   </button>
+                  <p className="text-zinc-600 text-xs text-center">We'll confirm your appointment shortly</p>
                 </div>
               )}
             </div>
@@ -738,6 +748,14 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
             <p className="text-zinc-400 text-sm">
               Questions? DM <span className="text-[var(--color-pink)]">@prettiedbymel</span> on Instagram.
             </p>
+            <a
+              href="https://instagram.com/prettiedbymel"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-500 text-sm hover:text-[var(--color-pink)] transition-colors"
+            >
+              View our latest designs → Instagram
+            </a>
             <button
               onClick={onBack}
               className="mt-4 text-[var(--color-pink)] text-base font-semibold hover:underline"
