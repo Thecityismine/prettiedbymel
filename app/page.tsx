@@ -12,6 +12,8 @@ import { ChevronLeft, Clock, ChevronRight, CalendarDays, LogOut, Plus, Lock } fr
 import { auth, authReady } from "@/lib/firebase";
 import { formatSlot, loadAvailability, getAvailableSlots, defaultAvailability } from "@/lib/availabilityDb";
 import { loadServices } from "@/lib/pricingDb";
+import { loadSocialLinks } from "@/lib/socialDb";
+import type { SocialLinks } from "@/lib/socialDb";
 import { defaultServices } from "@/lib/defaultServices";
 import type { Service, Appointment } from "@/lib/types";
 
@@ -300,13 +302,15 @@ function ClientPortal({
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState(user.displayName ?? "");
+  const [social, setSocial] = useState<SocialLinks>({ instagram: "", tiktok: "" });
 
   useEffect(() => {
     async function load() {
       try {
-        const [allAppts, allClients] = await Promise.all([
+        const [allAppts, allClients, socialLinks] = await Promise.all([
           restList("appointments"),
           restList("clients"),
+          loadSocialLinks(),
         ]);
         const appts = (allAppts as unknown as Appointment[])
           .filter((a) => a.clientId === user.uid)
@@ -314,6 +318,7 @@ function ClientPortal({
         setAppointments(appts);
         const record = allClients.find((c) => c.firebaseUid === user.uid);
         if (record?.name) setClientName(record.name as string);
+        setSocial(socialLinks);
       } catch {
         // show empty state
       } finally {
@@ -335,14 +340,20 @@ function ClientPortal({
           <div>
             <h1 className="font-playfair text-2xl font-black text-white tracking-widest uppercase">NAILS</h1>
             <p className="font-dancing text-lg text-[var(--color-pink)] text-glow-pink leading-tight">prettiedbymel</p>
-            <div className="flex gap-3 mt-1.5">
-              <a href="https://instagram.com/prettiedbymel" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-[var(--color-pink)] transition-colors" aria-label="Instagram">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-              </a>
-              <a href="https://tiktok.com/@prettiedbymel" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-[var(--color-pink)] transition-colors" aria-label="TikTok">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.79 1.54V6.75a4.85 4.85 0 0 1-1.02-.06Z"/></svg>
-              </a>
-            </div>
+            {(social.instagram || social.tiktok) && (
+              <div className="flex gap-3 mt-1.5">
+                {social.instagram && (
+                  <a href={`https://instagram.com/${social.instagram}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-[var(--color-pink)] transition-colors" aria-label="Instagram">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+                  </a>
+                )}
+                {social.tiktok && (
+                  <a href={`https://tiktok.com/@${social.tiktok}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-[var(--color-pink)] transition-colors" aria-label="TikTok">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.79 1.54V6.75a4.85 4.85 0 0 1-1.02-.06Z"/></svg>
+                  </a>
+                )}
+              </div>
+            )}
           </div>
           <button onClick={onSignOut} className="text-zinc-600 hover:text-zinc-300 transition-colors p-1">
             <LogOut size={18} />
@@ -420,6 +431,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [payMethod, setPayMethod] = useState<PayMethod>("card");
   const [copied, setCopied] = useState(false);
+  const [social, setSocial] = useState<SocialLinks>({ instagram: "", tiktok: "" });
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -430,6 +442,7 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
       .then(setServices)
       .catch(() => setServices(defaultServices))
       .finally(() => setServicesLoading(false));
+    loadSocialLinks().then(setSocial).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -748,14 +761,16 @@ function BookingFlow({ user, onBack }: { user: User; onBack: () => void }) {
             <p className="text-zinc-400 text-sm">
               Questions? DM <span className="text-[var(--color-pink)]">@prettiedbymel</span> on Instagram.
             </p>
-            <a
-              href="https://instagram.com/prettiedbymel"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-zinc-500 text-sm hover:text-[var(--color-pink)] transition-colors"
-            >
-              View our latest designs → Instagram
-            </a>
+            {social.instagram && (
+              <a
+                href={`https://instagram.com/${social.instagram}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-zinc-500 text-sm hover:text-[var(--color-pink)] transition-colors"
+              >
+                View our latest designs → Instagram
+              </a>
+            )}
             <button
               onClick={onBack}
               className="mt-4 text-[var(--color-pink)] text-base font-semibold hover:underline"

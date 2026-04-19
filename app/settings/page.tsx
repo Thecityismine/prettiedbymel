@@ -6,6 +6,8 @@ import PageHeader from "@/components/PageHeader";
 import Button from "@/components/Button";
 import { loadAvailability, saveAvailability, defaultAvailability } from "@/lib/availabilityDb";
 import type { Availability } from "@/lib/availabilityDb";
+import { loadSocialLinks, saveSocialLinks } from "@/lib/socialDb";
+import type { SocialLinks } from "@/lib/socialDb";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -23,11 +25,14 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [newDayOff, setNewDayOff] = useState("");
+  const [social, setSocial] = useState<SocialLinks>({ instagram: "", tiktok: "" });
+  const [savingSocial, setSavingSocial] = useState(false);
+  const [savedSocial, setSavedSocial] = useState(false);
 
   useEffect(() => {
-    loadAvailability()
-      .then((a) => { setAvail(a); })
-      .catch(() => { /* use defaults on error */ })
+    Promise.all([loadAvailability(), loadSocialLinks()])
+      .then(([a, s]) => { setAvail(a); setSocial(s); })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -62,6 +67,17 @@ export default function SettingsPage() {
       setSaveError(msg);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveSocial() {
+    setSavingSocial(true);
+    try {
+      await saveSocialLinks(social);
+      setSavedSocial(true);
+      setTimeout(() => setSavedSocial(false), 2000);
+    } finally {
+      setSavingSocial(false);
     }
   }
 
@@ -198,6 +214,43 @@ export default function SettingsPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Social Links */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Social Media</p>
+            <Button size="sm" onClick={handleSaveSocial} disabled={savingSocial}>
+              {savedSocial ? <><Check size={14} className="inline mr-1" />Saved</> : savingSocial ? "Saving…" : "Save"}
+            </Button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-zinc-400 block mb-1.5">Instagram handle</label>
+              <div className="flex items-center bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3 gap-2 focus-within:border-[var(--color-pink)] transition-colors">
+                <span className="text-zinc-500 text-sm shrink-0">instagram.com/</span>
+                <input
+                  className="flex-1 bg-transparent text-sm text-white outline-none placeholder-zinc-600"
+                  placeholder="prettiedbymel"
+                  value={social.instagram}
+                  onChange={(e) => setSocial((s) => ({ ...s, instagram: e.target.value.replace(/^@/, "") }))}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 block mb-1.5">TikTok handle</label>
+              <div className="flex items-center bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl px-4 py-3 gap-2 focus-within:border-[var(--color-pink)] transition-colors">
+                <span className="text-zinc-500 text-sm shrink-0">tiktok.com/@</span>
+                <input
+                  className="flex-1 bg-transparent text-sm text-white outline-none placeholder-zinc-600"
+                  placeholder="prettiedbymel"
+                  value={social.tiktok}
+                  onChange={(e) => setSocial((s) => ({ ...s, tiktok: e.target.value.replace(/^@/, "") }))}
+                />
+              </div>
+            </div>
+          </div>
+          <p className="text-zinc-600 text-xs mt-2 px-1">These links appear on the client booking page.</p>
         </section>
 
         {/* Booking link */}
